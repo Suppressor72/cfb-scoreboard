@@ -489,7 +489,7 @@ body {
   font-size: 0.64rem;
   opacity: 0.75;
 }
-.ls-row.won .ls-total {
+.ls-row.won .ls-total { /* winner (final) or leader (live) */
   color: var(--ok);
 }
 .game-block.ppd {
@@ -592,6 +592,10 @@ body {
 .mobile-team.won {
   font-weight: 800;
 }
+.mobile-team.ahead .score {
+  color: var(--ok);
+  font-weight: 800;
+}
 .mobile-status {
   color: var(--muted);
   font-size: 0.78rem;
@@ -653,6 +657,10 @@ body {
 .details-table tbody th {
   text-align: left;
   font-weight: 400;
+}
+.details-table .score-cell.leading {
+  color: var(--ok);
+  font-weight: 800;
 }
 .details-team {
   display: flex; /* block-level: fills the <th>, so the team stays left-justified */

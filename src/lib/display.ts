@@ -1,3 +1,16 @@
+import type { Game } from "../api/types";
+
+/**
+ * Team id currently leading a live game, or null when tied/not live.
+ * Used to green the leader's total like the winner's on final games.
+ */
+export function leadingTeamId(g: Game): string | null {
+  if (g.phase !== "in") return null;
+  const h = g.home.score ?? 0;
+  const a = g.away.score ?? 0;
+  return h > a ? g.home.id : a > h ? g.away.id : null;
+}
+
 /**
  * ESPN-style team metadata line: overall record, conference record, and
  * designated conference — e.g. "(2-0, 1-0 SEC)". Missing pieces drop out.

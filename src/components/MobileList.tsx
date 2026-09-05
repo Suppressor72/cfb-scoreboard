@@ -1,7 +1,7 @@
 import type { Game } from "../api/types";
 import { formatTime } from "../lib/dates";
 import { normalizeHex } from "../lib/color";
-import { teamMeta } from "../lib/display";
+import { leadingTeamId, teamMeta } from "../lib/display";
 import TeamLogo from "./TeamLogo";
 
 /** Compact chronological list — first-class narrow-screen view (SPEC.md). */
@@ -27,6 +27,7 @@ export default function MobileList({
       {sorted.map((g) => {
         const kickoff = g.kickoffUtc ? Date.parse(g.kickoffUtc) : null;
         const live = g.phase === "in";
+        const leaderId = leadingTeamId(g);
         const leader = live
           ? (g.home.score ?? 0) >= (g.away.score ?? 0)
             ? g.home
@@ -49,8 +50,8 @@ export default function MobileList({
                     : "TBA"}
               </span>
               <span className="mobile-matchup">
-                <MobileTeam team={g.away} />
-                <MobileTeam team={g.home} />
+                <MobileTeam team={g.away} leader={g.away.id === leaderId} />
+                <MobileTeam team={g.home} leader={g.home.id === leaderId} />
               </span>
               <span className={`mobile-status${live ? " live" : ""}`}>
                 {live && <span className="pulse-dot" aria-hidden="true" />}
@@ -73,10 +74,10 @@ export default function MobileList({
   );
 }
 
-function MobileTeam({ team }: { team: Game["away"] }) {
+function MobileTeam({ team, leader }: { team: Game["away"]; leader: boolean }) {
   const meta = teamMeta(team);
   return (
-    <span className={`mobile-team${team.winner ? " won" : ""}`}>
+    <span className={`mobile-team${team.winner ? " won" : ""}${leader ? " ahead" : ""}`}>
       <TeamLogo team={team} size={16} />
       {team.abbreviation}
       {team.rank !== undefined && <span className="rank">#{team.rank}</span>}

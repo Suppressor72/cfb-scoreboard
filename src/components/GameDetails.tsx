@@ -1,7 +1,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import type { Game, TeamResult } from "../api/types";
 import { formatTime } from "../lib/dates";
-import { teamMeta } from "../lib/display";
+import { leadingTeamId, teamMeta } from "../lib/display";
 import { uiScale } from "../lib/uiScale";
 import TeamLogo from "./TeamLogo";
 
@@ -21,6 +21,7 @@ function Linescore({ game }: { game: Game }) {
   const periodCount = hasPeriods
     ? Math.max(away.linescores?.length ?? 0, home.linescores?.length ?? 0)
     : 0;
+  const leaderId = leadingTeamId(game);
 
   const periodLabel = (i: number): string => {
     if (i < 4) return String(i + 1);
@@ -45,7 +46,7 @@ function Linescore({ game }: { game: Game }) {
             {t.linescores?.[i] ?? ""}
           </td>
         ))}
-      <td className="score-cell">
+      <td className={`score-cell${t.winner || t.id === leaderId ? " leading" : ""}`}>
         {t.score !== undefined ? t.score : game.phase === "pre" ? "–" : ""}
         {t.winner ? " ✔" : ""}
       </td>

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Game } from "../api/types";
 import { normalizeHex, teamTint } from "../lib/color";
-import { teamMeta } from "../lib/display";
+import { leadingTeamId, teamMeta } from "../lib/display";
 import { formatTime } from "../lib/dates";
 import { uiScale } from "../lib/uiScale";
 import type { Block, ChannelGroup } from "../selectors/lanes";
@@ -295,6 +295,7 @@ function GameBlock({
   );
   const showLinescore =
     g.phase === "in" || !!(g.home.linescores?.length || g.away.linescores?.length);
+  const leaderId = leadingTeamId(g);
 
   return (
     <button
@@ -329,7 +330,10 @@ function GameBlock({
             <span className="ls-total">T</span>
           </span>
           {[g.away, g.home].map((t) => (
-            <span key={t.id} className={`ls-row${t.winner ? " won" : ""}`}>
+            <span
+              key={t.id}
+              className={`ls-row${t.winner || t.id === leaderId ? " won" : ""}`}
+            >
               {Array.from({ length: periodCount }, (_, i) => (
                 <span key={i}>{t.linescores?.[i] ?? ""}</span>
               ))}

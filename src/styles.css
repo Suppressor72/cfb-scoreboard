@@ -669,9 +669,17 @@ body {
   text-align: left;
   font-weight: 600;
 }
+.details-team-block {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
 .details-team .record {
   color: var(--muted);
   font-weight: 400;
+  font-size: 0.8rem;
+  white-space: nowrap;
 }
 .period-cell {
   text-align: center;

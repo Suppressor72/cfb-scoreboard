@@ -33,10 +33,12 @@ function Linescore({ game }: { game: Game }) {
       <th scope="row">
         <span className="details-team">
           <TeamLogo team={t} size={22 * uiScale()} />
-          <span className="details-team-name">
-            {t.name}
-            {t.rank !== undefined ? <span className="rank"> #{t.rank}</span> : null}
-            {teamMeta(t) ? <span className="record"> {teamMeta(t)}</span> : null}
+          <span className="details-team-block">
+            <span className="details-team-name">
+              {t.name}
+              {t.rank !== undefined ? <span className="rank"> #{t.rank}</span> : null}
+            </span>
+            {teamMeta(t) ? <span className="record">{teamMeta(t)}</span> : null}
           </span>
         </span>
       </th>

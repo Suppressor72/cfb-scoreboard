@@ -3,6 +3,7 @@ import { formatDayLabel } from "../lib/dates";
 export interface DayBadge {
   live: number;
   done: boolean;
+  count: number; // games scheduled that day; 0 → tab hidden (unless selected)
 }
 
 interface Props {

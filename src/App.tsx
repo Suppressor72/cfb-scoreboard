@@ -113,16 +113,23 @@ export default function App() {
     [filtered, selectedDay],
   );
   const badges = useMemo(() => {
-    const map: Record<string, { live: number; done: boolean }> = {};
+    const map: Record<string, { live: number; done: boolean; count: number }> = {};
     for (const day of days) {
       const games = snapshot ? gamesForDay(snapshot.games, day, TZ) : [];
       map[day] = {
         live: games.filter((g) => g.phase === "in").length,
         done: games.length > 0 && games.every((g) => g.phase === "post"),
+        count: games.length,
       };
     }
     return map;
   }, [snapshot, days]);
+  // Once the week is loaded, gameless days lose their tab — except the
+  // selected day, so deep-links and explicit navigation stay coherent.
+  const visibleDays = useMemo(() => {
+    if (!snapshot) return days;
+    return days.filter((day) => day === selectedDay || (badges[day]?.count ?? 0) > 0);
+  }, [days, snapshot, selectedDay, badges]);
   const carryover = useMemo(() => {
     if (!snapshot) return [];
     const prev = addDaysIso(selectedDay, -1);
@@ -164,7 +171,7 @@ export default function App() {
       </header>
 
       <DayTabs
-        days={days}
+        days={visibleDays}
         selected={selectedDay}
         badges={badges}
         onSelect={handleSelectDay}

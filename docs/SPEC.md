@@ -15,6 +15,9 @@ Overall shape: single-page app, four zones, top to bottom:
 - The week window is **Thursday → Wednesday** (7 days), anchored to the most
   recent Thursday. Every calendar day belongs to exactly one window, so
    **today always has a tab** — including Tuesday/Wednesday midweek games.
+- Days with no scheduled games render **no tab** once the week's data has
+  loaded (all seven show while loading); the selected day always keeps its
+  tab so deep-links stay coherent.
 - Default tab: today. A "Today" shortcut appears when the user has navigated
   elsewhere.
 - Prev/next arrows shift the window by 7 days (history and future schedules

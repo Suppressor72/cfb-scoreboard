@@ -64,11 +64,14 @@ Overall shape: single-page app, four zones, top to bottom:
 - **Row collapse:** any channel group with more than 2 lanes renders
   collapsed to 2 lanes with a "+N more" chip; expanding shows all lanes. This
   applies to *every* channel (streaming rows included), not just "Other".
-- **Horizontal axis = time**, user's local timezone, epoch-ms geometry.
-  Hour ticks (half-hour on dense days), labeled both edges of the scroll
-  range. Window covers all games on the selected day, extended past midnight
-  for overnight finishers. A "now" line renders only on days with live games
-  and is an isolated element (its clock does not re-render the grid).
+- **Horizontal axis = time**, user's local timezone, epoch-ms geometry, at a
+  square aspect: one hour across equals one lane height. The day compresses
+  below that only when it would overflow the container, down to a ~43px/hour
+  floor below which horizontal scrolling returns. Hour ticks (half-hour on
+  dense days), labeled both edges of the scroll range. Window covers all
+  games on the selected day, extended past midnight for overnight finishers.
+  A "now" line renders only on days with live games and is an isolated
+  element (its clock does not re-render the grid).
 - Sticky channel rail on the left; horizontal scroll when the day exceeds the
   viewport.
 

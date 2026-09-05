@@ -9,7 +9,6 @@ import { groupByChannel, timeWindow } from "../selectors/lanes";
 import TeamLogo from "./TeamLogo";
 
 const RAIL_PX = 92;
-const FALLBACK_PX_PER_MS = 0.00006; // ≈216px/hour, used before first measure
 const MIN_PX_PER_MS = 0.000012; // ≈43px/hour floor — beyond this, scroll
 const LANE_PX = 64;
 const COLLAPSE_LANES = 2;
@@ -26,9 +25,9 @@ interface Props {
 }
 
 /**
- * TV-guide grid. The horizontal scale is responsive: the whole day is
- * compressed to fit the container width so there is no left/right
- * scrolling, with a density floor below which scrolling returns.
+ * TV-guide grid. The horizontal scale keeps a square time aspect — one hour
+ * across equals one lane height — compressing below that only when the day
+ * would overflow the container (floor: ~43px/hour, then it scrolls).
  */
 export default function Grid(props: Props) {
   const { games, tz } = props;
@@ -55,15 +54,18 @@ export default function Grid(props: Props) {
   const win = useMemo(() => timeWindow(groups), [groups]);
   const durationMs = Math.max(win.endMs - win.startMs, 3_600_000);
 
-  // All geometry in scaled pixels so JS dimensions match the scaled CSS
+  // All geometry in scaled pixels so JS dimensions match the scaled CSS.
+  // Square time aspect: one hour across equals one lane height. The day
+  // compresses below that only when it would overflow the container, down
+  // to a readability floor below which horizontal scrolling returns.
   const railPx = RAIL_PX * scale;
-  const pxPerMs =
+  const lanePx = LANE_PX * scale;
+  const aspectPxPerMs = lanePx / 3_600_000;
+  const fitPxPerMs =
     containerWidth > railPx + 100 * scale
-      ? Math.max(
-          MIN_PX_PER_MS * scale,
-          (containerWidth - railPx - 8 * scale) / durationMs,
-        )
-      : FALLBACK_PX_PER_MS * scale;
+      ? (containerWidth - railPx - 8 * scale) / durationMs
+      : aspectPxPerMs;
+  const pxPerMs = Math.max(MIN_PX_PER_MS * scale, Math.min(aspectPxPerMs, fitPxPerMs));
   const durationPx = durationMs * pxPerMs;
   const hourPx = pxPerMs * 3_600_000;
   const minBlockPx = Math.max(56, Math.min(165, hourPx * 1.3)) * scale;

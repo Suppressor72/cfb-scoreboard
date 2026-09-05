@@ -248,10 +248,13 @@ function GameBlock({
     ? (g.home.score ?? 0) >= (g.away.score ?? 0)
       ? g.home
       : g.away
-    : g.phase === "post"
-      ? ((g.home.winner ? g.home : g.away.winner ? g.away : g.home) as typeof g.home)
-      : g.home;
+      : g.phase === "post"
+        ? ((g.home.winner ? g.home : g.away.winner ? g.away : g.home) as typeof g.home)
+        : g.home;
   const accent = normalizeHex(accentTeam.color);
+  // Tint is a gradient layered over the opaque panel background so the
+  // vertical time gridlines never show through the block
+  const tint = accent ? teamTint(accent) : undefined;
 
   const statusText = ppd
     ? ppd
@@ -271,7 +274,7 @@ function GameBlock({
         left: pos(block.startMs),
         width,
         borderColor: accent,
-        background: teamTint(accent),
+        backgroundImage: tint ? `linear-gradient(${tint}, ${tint})` : undefined,
       }}
       aria-label={`${g.away.name} at ${g.home.name}, ${statusText}`}
       onClick={() => onSelectGame(g.id)}

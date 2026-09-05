@@ -365,7 +365,7 @@ body {
   justify-content: center;
   gap: 1px;
   padding: 2px 7px;
-  background: var(--panel-2);
+  background-color: var(--panel-2);
   color: var(--text);
   text-align: left;
   cursor: pointer;

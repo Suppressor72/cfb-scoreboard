@@ -77,7 +77,7 @@ export function statusFor(kind: keyof typeof STATUS | "unknown"): RawStatus {
   return { ...STATUS[kind] };
 }
 
-function competitor(opts: {
+export function competitor(opts: {
   id: string;
   abbr: string;
   name: string;

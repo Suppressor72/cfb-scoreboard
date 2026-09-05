@@ -5,8 +5,9 @@ Overall shape: single-page app, four zones, top to bottom:
 1. **Header** — app title, refresh status ("Live · updated 12s ago" / "Stale ·
    last updated 4 min ago" / error state), manual refresh button.
 2. **Day tabs** — seven consecutive days (see below) + previous/next week arrows.
-3. **Filter bar** — chips, multi-select, combined with AND, persisted to
-   localStorage (versioned; corrupt/missing storage must never block startup).
+3. **Filter bar** — chips, multi-select, **additive within the selection
+   group** (see Filters), persisted to localStorage (versioned; corrupt/missing
+   storage must never block startup).
 4. **The grid** — the TV-guide scoreboard.
 
 ## Day tabs and the week window
@@ -32,6 +33,8 @@ Overall shape: single-page app, four zones, top to bottom:
   conferences" rollup) — included when **either** team's conference matches.
   Unknown membership keeps the game visible under no conference chip and never
   matches a conference filter.
+- **Selection chips are additive (union):** Top 25 + Big Ten shows all Top 25
+  games *plus* all Big Ten games — never the intersection.
 - `Televised only` — at least one broadcast assignment of kind `tv` (known
   streaming counts separately; see "Broadcast rows"). Games with unknown
   availability are *not* hidden by this filter — they show a "TV?" hint.

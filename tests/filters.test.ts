@@ -3,6 +3,7 @@ import { applyFilters, hasActiveFilters, NO_FILTERS } from "../src/selectors/fil
 import type { Game } from "../src/api/types";
 import { normalizeEvent } from "../src/api/espn";
 import {
+  competitor,
   finalEvent,
   liveEvent,
   makeEvent,
@@ -48,15 +49,51 @@ describe("applyFilters", () => {
     expect(out.map((g) => g.id).sort()).toEqual([tv.id, unknown.id].sort());
   });
 
-  it("combines active filters with AND", () => {
-    const games = [gameOf(makeEvent()), gameOf(finalEvent)];
-    const out = applyFilters(games, {
+  it("selection chips are additive: Top 25 ∪ conference, not their intersection", () => {
+    const rankedOnly = gameOf(finalEvent); // PSU #7 (Big Ten) — matches top25, not Big 12
+    const unrankedBig12 = gameOf(
+      makeEvent({
+        id: "401900009",
+        competitors: [
+          competitor({
+            id: "601",
+            abbr: "UCF",
+            name: "UCF Knights",
+            color: "BA9200",
+            conferenceId: "4",
+            homeAway: "away",
+          }),
+          competitor({
+            id: "602",
+            abbr: "TTU",
+            name: "Texas Tech Red Raiders",
+            color: "0f2540",
+            conferenceId: "4",
+            homeAway: "home",
+          }),
+        ],
+      }),
+    );
+    const neither = gameOf(streamOnlyEvent); // unranked, ACC/Sun Belt
+    const out = applyFilters([rankedOnly, unrankedBig12, neither], {
+      ...NO_FILTERS,
       top25: true,
       conferences: ["Big 12"],
-      televisedOnly: false,
     });
-    // makeEvent: ranked + Big 12 ✓ ; finalEvent: ranked + Big Ten only ✗
-    expect(out.map((g) => g.id)).toEqual([makeEvent().id as string]);
+    expect(out).toEqual([rankedOnly, unrankedBig12]);
+  });
+
+  it("televised only restricts the additive selection without shrinking it to AND", () => {
+    const rankedStreamOnly = gameOf(
+      makeEvent({ broadcasts: [{ market: "national", names: ["ACCNX"] }] }),
+    ); // ORE #12 on ACCNX — ranked, stream-only
+    const rankedTv = gameOf(finalEvent); // PSU #7 on FOX
+    const out = applyFilters([rankedStreamOnly, rankedTv], {
+      ...NO_FILTERS,
+      top25: true,
+      televisedOnly: true,
+    });
+    expect(out).toEqual([rankedTv]);
   });
 
   it("hasActiveFilters reflects every dimension", () => {

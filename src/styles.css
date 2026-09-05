@@ -471,18 +471,18 @@ body {
 .ls-row {
   display: flex;
   justify-content: flex-end;
-  gap: calc(3px * var(--s));
+  gap: calc(5px * var(--s));
   height: calc(16px * var(--s));
   line-height: calc(16px * var(--s));
   font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
 }
 .ls-row > span {
-  width: calc(11px * var(--s));
+  width: calc(14px * var(--s)); /* fits double-digit quarters */
   text-align: center;
 }
 .ls-row .ls-total {
-  width: calc(17px * var(--s));
+  width: calc(18px * var(--s));
   font-weight: 800;
 }
 .ls-head {

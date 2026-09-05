@@ -10,7 +10,7 @@ import TeamLogo from "./TeamLogo";
 
 const RAIL_PX = 92;
 const MIN_PX_PER_MS = 0.000012; // ≈43px/hour floor — beyond this, scroll
-const LANE_PX = 64;
+const LANE_PX = 80;
 const COLLAPSE_LANES = 2;
 
 interface Props {
@@ -22,6 +22,8 @@ interface Props {
   onToggleExpand: (channel: string) => void;
   onSelectGame: (id: string) => void;
   selectedGameId: string | null;
+  /** ESPN Analytics favorite per game id (pre-game predictor / live WP). */
+  predictions: Map<string, import("../api/types").WinProb | null>;
 }
 
 /**
@@ -125,6 +127,7 @@ export default function Grid(props: Props) {
               onToggleExpand={props.onToggleExpand}
               onSelectGame={props.onSelectGame}
               selectedGameId={props.selectedGameId}
+              predictions={props.predictions}
             />
           ))}
         </div>
@@ -167,6 +170,7 @@ function ChannelRow({
   onToggleExpand,
   onSelectGame,
   selectedGameId,
+  predictions,
 }: {
   group: ChannelGroup;
   pos: (ms: number) => number;
@@ -182,6 +186,7 @@ function ChannelRow({
   onToggleExpand: (channel: string) => void;
   onSelectGame: (id: string) => void;
   selectedGameId: string | null;
+  predictions: Map<string, import("../api/types").WinProb | null>;
 }) {
   const collapsible = group.lanes.length > COLLAPSE_LANES;
   const collapsed = collapsible && !expanded.has(group.channel);
@@ -223,6 +228,7 @@ function ChannelRow({
                 tz={tz}
                 onSelectGame={onSelectGame}
                 selected={selectedGameId === block.game.id}
+                winProb={predictions.get(block.game.id) ?? null}
               />
             ))}
           </div>
@@ -259,6 +265,7 @@ function GameBlock({
   tz,
   onSelectGame,
   selected,
+  winProb,
 }: {
   block: Block;
   pos: (ms: number) => number;
@@ -268,6 +275,7 @@ function GameBlock({
   tz: string;
   onSelectGame: (id: string) => void;
   selected: boolean;
+  winProb: import("../api/types").WinProb | null;
 }) {
   const g = block.game;
   const width = Math.max((block.endMs - block.startMs) * pxPerMs, minBlockPx);
@@ -309,6 +317,14 @@ function GameBlock({
     g.phase === "in" || !!(g.home.linescores?.length || g.away.linescores?.length);
   const leaderId = leadingTeamId(g);
 
+  // ESPN Analytics favorite: predictor before kickoff, live WP during
+  let predText: string | null = null;
+  if (winProb && winProb.pct > 0) {
+    const team =
+      winProb.teamId === g.home.id ? g.home : winProb.teamId === g.away.id ? g.away : null;
+    if (team) predText = `${team.abbreviation} ${winProb.pct}%`;
+  }
+
   return (
     <button
       type="button"
@@ -327,6 +343,7 @@ function GameBlock({
         {live ? `LIVE · ${statusText}` : statusText}
         {g.availability === "unknown" && g.phase === "pre" ? " · TV?" : ""}
       </span>
+      <span className="block-pred">{predText ?? ""}</span>
       <span className={`block-team${g.phase === "post" && g.away.winner ? " won" : ""}`}>
         <TeamLine team={g.away} logoSize={logoSize} />
       </span>

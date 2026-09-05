@@ -18,6 +18,13 @@ import { addDaysIso, todayInTz, weekDays, weekStartFor } from "./lib/dates";
 import { TZ } from "./lib/tz";
 import { getWeek, refreshWeek, subscribe } from "./state/store";
 import { startScheduler } from "./state/scheduler";
+import {
+  getPrediction,
+  predictorVersion,
+  subscribePredictors,
+  syncPredictors,
+} from "./state/predictor";
+import type { WinProb } from "./api/types";
 
 const FILTERS_KEY = "cfb-scoreboard:filters:v1";
 
@@ -107,6 +114,16 @@ export default function App() {
     [snapshot, selectedDay],
   );
   const filtered = useMemo(() => applyFilters(dayGames, filters), [dayGames, filters]);
+  // Win probabilities live in their own cache; re-merge on version bumps
+  const predVersion = useSyncExternalStore(subscribePredictors, predictorVersion);
+  const predictions = useMemo(() => {
+    const map = new Map<string, WinProb | null>();
+    for (const g of dayGames) map.set(g.id, getPrediction(g.id));
+    return map;
+  }, [dayGames, predVersion]);
+  useEffect(() => {
+    if (dayGames.length > 0) void syncPredictors(dayGames);
+  }, [dayGames]);
   const onAxis = useMemo(() => filtered.filter((g) => !g.timeTbd), [filtered]);
   const tba = useMemo(
     () => timeTbaGames(filtered, selectedDay, TZ),
@@ -216,12 +233,14 @@ export default function App() {
               <MobileList
                 games={filtered}
                 tz={TZ}
+                predictions={predictions}
                 onSelectGame={(id) => setSelectedGameId(id)}
               />
             ) : (
               <Grid
                 games={onAxis}
                 tz={TZ}
+                predictions={predictions}
                 focusChannel={focusChannel}
                 expandedChannels={expandedChannels}
                 onToggleChannel={setFocusChannel}

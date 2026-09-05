@@ -8,10 +8,12 @@ import TeamLogo from "./TeamLogo";
 export default function MobileList({
   games,
   tz,
+  predictions,
   onSelectGame,
 }: {
   games: Game[];
   tz: string;
+  predictions: Map<string, import("../api/types").WinProb | null>;
   onSelectGame: (id: string) => void;
 }) {
   const sorted = [...games].sort((a, b) => {
@@ -34,6 +36,13 @@ export default function MobileList({
             : g.away
           : g.home;
         const bg = normalizeHex(leader.color);
+        const wp = predictions.get(g.id) ?? null;
+        let predText = "";
+        if (wp && wp.pct > 0) {
+          const team =
+            wp.teamId === g.home.id ? g.home : wp.teamId === g.away.id ? g.away : null;
+          if (team) predText = ` · ${team.abbreviation} ${wp.pct}%`;
+        }
         return (
           <li key={g.id}>
             <button
@@ -62,6 +71,7 @@ export default function MobileList({
                     : g.statusKind === "final_ot"
                       ? g.statusDetail || "Final/OT"
                       : "Final"}
+                {predText}
               </span>
               <span className="mobile-channel">
                 {g.primaryBroadcast ?? (g.availability === "unknown" ? "TV?" : "Other")}

@@ -64,6 +64,12 @@ export interface Game {
   endUtc?: null;
 }
 
+/** ESPN Analytics favorite: team id + win probability, whole percent. */
+export interface WinProb {
+  teamId: string;
+  pct: number;
+}
+
 export interface Snapshot {
   games: Game[];
   fetchedAt: string; // local clock, ISO

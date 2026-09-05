@@ -14,6 +14,7 @@
 import type { Game } from "../api/types";
 import { gamesForDay } from "../selectors/grouping";
 import { getWeek, refreshWeek } from "./store";
+import { syncPredictors } from "./predictor";
 
 const TICK_MS = 30_000;
 const LIVE_CADENCE_MS = 30_000;
@@ -85,6 +86,8 @@ export function startScheduler(opts: SchedulerOptions): () => void {
     const dayGames = state.snapshot
       ? gamesForDay(state.snapshot.games, opts.getSelectedDay(), opts.tz)
       : [];
+    // Win probabilities fill in small batches on the same tick (own cache)
+    void syncPredictors(dayGames);
     const cadence = cadenceFor(dayGames, nowMs);
     const since = nowMs - (state.lastAttemptAt ?? 0);
     if (since >= cadence) {
@@ -122,6 +125,10 @@ export function startScheduler(opts: SchedulerOptions): () => void {
       state.lastAttemptAt === undefined || now() - state.lastAttemptAt >= SETTLED_TTL_MS;
     if (state.state === "idle" || stale) {
       await refreshWeek(opts.weekStart, opts.tz);
+    }
+    const fresh = getWeek(opts.weekStart);
+    if (fresh.snapshot) {
+      void syncPredictors(gamesForDay(fresh.snapshot.games, opts.getSelectedDay(), opts.tz));
     }
     schedule(TICK_MS);
   })();

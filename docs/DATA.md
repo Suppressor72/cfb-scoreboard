@@ -105,6 +105,30 @@ market, Spanish-language) may appear. Normalization:
 - The grid is a *national* schedule with a primary channel; it is not a
   per-market listings feed. All assignments appear in the game popover.
 
+## Win probability / matchup predictor
+
+ESPN Analytics percentages live in the per-game summary endpoint, not the
+scoreboard:
+
+```
+GET https://site.api.espn.com/apis/site/v2/sports/football/college-football/summary?event={gameId}
+```
+
+- **Pre-game** — `predictor: { homeTeam: { id, gameProjection: "84.1" },
+  awayTeam: { … } }` (the "Matchup Predictor"). Percent strings.
+- **In-progress** — `winprobability: [{ homeWinProbability: 0.969,
+  tiePercentage: 0 }]`; the LAST entry is current. Team ids come from
+  `header.competitions[0].competitors[]` (`homeAway` + `team.id`).
+- Final/unpublished → no usable data (renders nothing).
+
+Summaries are ~100–275KB each, so they are fetched through a dedicated
+bounded cache (`src/state/predictor.ts`): only pre/in games on the selected
+day, batches of ≤8 with concurrency 3 driven by the scheduler tick, TTLs of
+15 min pre-game / 90 s live, capped at 300 entries, failures keep the last
+value and wait out the TTL instead of hammering. The UI merges predictions
+by game id at render time (`WinProb { teamId, pct }` in the contract);
+scores and blocks show the favored team's abbreviation + percent.
+
 ## Local days and timezones
 
 Provider date buckets ≠ user-local days. Rules:

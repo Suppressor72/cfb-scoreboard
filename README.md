@@ -2,6 +2,10 @@
 
 A college football scoreboard with a TV-guide layout: channels are rows, time runs left-to-right, and each game is a block spanning its kickoff-to-final window on the channel that broadcast it.
 
+**Try it live: <https://suppressor72.github.io/cfb-scoreboard/>**
+
+![Scoreboard grid with live games, quarter-by-quarter scores, and win probabilities](docs/screenshot.png)
+
 ## Features
 
 - **TV-guide grid** — one row-group per channel (ABC, ESPN, FOX, BTN, ...), games positioned by start time and sized by duration. Concurrent games on a channel stack into packed lanes instead of overlapping.

@@ -305,6 +305,7 @@ export default function App() {
         <GameDetails
           game={selectedGame}
           tz={TZ}
+          winProb={predictions.get(selectedGame.id) ?? null}
           onClose={() => setSelectedGameId(null)}
         />
       )}

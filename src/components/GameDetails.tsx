@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from "react";
-import type { Game, TeamResult } from "../api/types";
+import type { Game, TeamResult, WinProb } from "../api/types";
 import { formatTime } from "../lib/dates";
 import { leadingTeamId, teamMeta } from "../lib/display";
 import { uiScale } from "../lib/uiScale";
@@ -81,10 +81,12 @@ function Linescore({ game }: { game: Game }) {
 export default function GameDetails({
   game,
   tz,
+  winProb,
   onClose,
 }: {
   game: Game;
   tz: string;
+  winProb: WinProb | null;
   onClose: () => void;
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -99,6 +101,29 @@ export default function GameDetails({
   }, [onClose]);
 
   const kickoff = game.kickoffUtc ? Date.parse(game.kickoffUtc) : null;
+
+  // Win probability for both sides, favorite first (pre-game and live only)
+  let predLine: ReactNode = null;
+  if (winProb && winProb.pct > 0 && game.phase !== "post") {
+    const fav =
+      winProb.teamId === game.home.id
+        ? game.home
+        : winProb.teamId === game.away.id
+          ? game.away
+          : null;
+    if (fav) {
+      const other = fav === game.home ? game.away : game.home;
+      predLine = (
+        <p className="details-pred">
+          {game.phase === "in" ? "Win probability" : "Matchup predictor"}:{" "}
+          <b>
+            {fav.abbreviation} {winProb.pct}%
+          </b>{" "}
+          · {other.abbreviation} {100 - winProb.pct}%
+        </p>
+      );
+    }
+  }
 
   return (
     <div className="details-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
@@ -122,6 +147,14 @@ export default function GameDetails({
               : "Date TBA"}{" "}
           · {game.statusDetail || game.statusKind}
         </p>
+        {predLine}
+        {game.odds && (
+          <p>
+            {game.odds.details || "Line"}
+            {game.odds.overUnder !== undefined ? ` · O/U ${game.odds.overUnder}` : ""}
+            {game.odds.provider ? ` · ${game.odds.provider}` : ""}
+          </p>
+        )}
         <p>
           {game.broadcasts.length > 0
             ? game.broadcasts.map((b) => b.source).join(" · ")

@@ -60,8 +60,18 @@ export interface Game {
   availability: Availability;
   venue?: { name: string; city?: string };
   gamecastUrl?: string; // validated https espn.com link
+  odds?: OddsInfo;
   /** Reserved — ESPN provides no end time; all right edges are estimates. */
   endUtc?: null;
+}
+
+/** Betting line from the scoreboard's odds object (pre-game; ESPN drops it live). */
+export interface OddsInfo {
+  provider?: string; // "DraftKings", "ESPN BET", ...
+  details: string; // "ORE -24.5"
+  overUnder?: number;
+  spread?: number;
+  favoriteTeamId?: string;
 }
 
 /** ESPN Analytics favorite: team id + win probability, whole percent. */

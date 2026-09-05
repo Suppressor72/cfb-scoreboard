@@ -277,6 +277,32 @@ function normalizeVenue(competition: Record<string, unknown>): Game["venue"] {
   return { name, city };
 }
 
+/**
+ * Betting line from `competitions[].odds[0]` — present pre-game; ESPN drops
+ * it once games are live. All fields optional except details.
+ */
+function normalizeOdds(competition: Record<string, unknown>): Game["odds"] {
+  const first = arr(competition.odds)?.find(isRecord);
+  if (!first) return undefined;
+  const details = str(first.details);
+  const overUnder = num(first.overUnder);
+  const provider = isRecord(first.provider) ? str(first.provider.name) : undefined;
+  let favoriteTeamId: string | undefined;
+  for (const side of [first.homeTeamOdds, first.awayTeamOdds]) {
+    if (!isRecord(side) || side.favorite !== true || !isRecord(side.team)) continue;
+    favoriteTeamId = str(side.team.id);
+    break;
+  }
+  if (!details && overUnder === undefined) return undefined;
+  return {
+    provider,
+    details: details ?? "",
+    overUnder,
+    spread: num(first.spread),
+    favoriteTeamId,
+  };
+}
+
 function normalizeGamecastUrl(event: Record<string, unknown>): string | undefined {
   for (const link of arr(event.links) ?? []) {
     if (!isRecord(link)) continue;
@@ -343,6 +369,7 @@ export function normalizeEvent(event: unknown): NormalizedEvent {
       availability,
       venue: normalizeVenue(competition),
       gamecastUrl: normalizeGamecastUrl(event),
+      odds: normalizeOdds(competition),
       endUtc: null,
     },
   };

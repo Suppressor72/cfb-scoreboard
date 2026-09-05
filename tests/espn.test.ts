@@ -148,6 +148,31 @@ describe("normalizeEvent", () => {
     expect(g2.home.logoDark).toBeDefined(); // derived from the id, still fine
   });
 
+  it("maps the betting line from the odds object", () => {
+    const g = gameOf(
+      makeEvent({
+        odds: [
+          {
+            provider: { id: "100", name: "DraftKings" },
+            details: "OKST -14.5",
+            overUnder: 51.5,
+            spread: -14.5,
+            awayTeamOdds: { favorite: false, underdog: true },
+            homeTeamOdds: { favorite: true, team: { id: "201" } },
+          },
+        ],
+      }),
+    );
+    expect(g.odds).toEqual({
+      provider: "DraftKings",
+      details: "OKST -14.5",
+      overUnder: 51.5,
+      spread: -14.5,
+      favoriteTeamId: "201",
+    });
+    expect(gameOf(makeEvent()).odds).toBeUndefined();
+  });
+
   it("rejects malformed events with an error instead of throwing", () => {
     const result = normalizeEvent(malformedEvent);
     expect("error" in result).toBe(true);

@@ -126,6 +126,7 @@ export interface EventOverrides {
   links?: unknown;
   venue?: unknown;
   competitors?: unknown;
+  odds?: unknown;
 }
 
 export function makeEvent(o: EventOverrides = {}): Record<string, unknown> {
@@ -165,6 +166,7 @@ export function makeEvent(o: EventOverrides = {}): Record<string, unknown> {
             indoor: false,
           },
         broadcasts: o.broadcasts ?? [{ market: "national", names: ["ABC", "Disney+"] }],
+        odds: o.odds,
         competitors:
           o.competitors ??
           [

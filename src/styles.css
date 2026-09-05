@@ -676,6 +676,9 @@ body {
   text-align: left;
   font-weight: 600;
 }
+.details-pred b {
+  color: var(--accent);
+}
 .details-team-block {
   display: flex;
   flex-direction: column;

@@ -78,6 +78,7 @@ ranges if we ever need to shrink payloads.
 | `team.logo` / `color` / `alternateColor` | branding | brand color for blocks |
 | `competitions[].venue.fullName` + `address` | `venue` | optional |
 | `competitions[].broadcasts[]` | `broadcasts` | list of `{market, names[]}` — see below |
+| `competitions[].odds[]` | `odds` | first entry: `{provider.name, details, overUnder, spread, home/awayTeamOdds.favorite → favoriteTeamId}` — present pre-game, dropped by ESPN once live; popup shows `details · O/U n · provider` |
 | `links[]` where `rel` includes `summary` | `gamecastUrl` | `https://www.espn.com/...`; validate scheme+host before use |
 
 **No end time exists anywhere in the payload.** Completed-game width is always

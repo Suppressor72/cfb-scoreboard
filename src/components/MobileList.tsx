@@ -71,7 +71,7 @@ export default function MobileList({
                     : g.statusKind === "final_ot"
                       ? g.statusDetail || "Final/OT"
                       : "Final"}
-                {predText}
+                {predText && <span className="pred">{predText}</span>}
               </span>
               <span className="mobile-channel">
                 {g.primaryBroadcast ?? (g.availability === "unknown" ? "TV?" : "Other")}

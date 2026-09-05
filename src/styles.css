@@ -440,8 +440,11 @@ body {
 .block-team.won {
   font-weight: 800;
 }
+.rank {
+  color: var(--ok);
+}
 .game-block .rank {
-  opacity: 0.8;
+  opacity: 0.9;
   font-size: 0.7rem;
 }
 .block-status {
@@ -453,8 +456,8 @@ body {
   opacity: 0.85;
   white-space: nowrap;
 }
-.block-status .pred {
-  color: var(--accent);
+.pred {
+  color: var(--ok);
   font-weight: 600;
 }
 /* Quarter-by-quarter columns: right-justified, floated over team meta text.
@@ -677,7 +680,7 @@ body {
   font-weight: 600;
 }
 .details-pred b {
-  color: var(--accent);
+  color: var(--ok);
 }
 .details-team-block {
   display: flex;

@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+.vite/
+
+# Test output
+coverage/
+
+# Local env / secrets (never commit)
+.env
+.env.*
+*.local
+
+# Probe artifacts (large raw payloads)
+.probe/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

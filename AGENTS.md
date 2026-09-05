@@ -64,6 +64,13 @@ naive versions defective. Violating them reintroduces known bugs:
 
 ## Commands
 
-Not yet scaffolded. After scaffolding: `npm run dev` (dev server), `npm run
-build` (production build), `npm test`, `npm run typecheck`. Keep this section
-updated when scripts change.
+- `npm run dev` — Vite dev server
+- `npm run build` — typecheck + production build
+- `npm run preview` — serve the production build locally
+- `npm test` — vitest once; `npm run test:watch` in watch mode
+- `npm run typecheck` — tsc only
+
+Source layout: `src/api` (provider contract + ESPN adapter), `src/lib`
+(tz/date math, color), `src/selectors` (pure filters/grouping/lanes),
+`src/state` (store + the scheduler), `src/components` (UI). Tests live in
+`tests/` with sanitized fixtures in `tests/fixtures/`.

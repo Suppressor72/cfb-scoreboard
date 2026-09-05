@@ -27,7 +27,8 @@ Scores and broadcast info come from ESPN's free public scoreboard API (no key, C
 - `docs/ADVERSARIAL_REVIEW.md` — external spec review (F1–F7)
 - `docs/REVIEW_RESPONSE.md` — disposition of every review finding
 - `scripts/probe_espn.py` — ESPN API verification probe
-- `src/` — application code (to be scaffolded)
+- `src/` — application code (`api` provider/adapter, `lib` date/color utils, `selectors` pure logic, `state` store/scheduler, `components` UI)
+- `tests/` — vitest suites with sanitized ESPN fixtures
 
 ## Development
 
@@ -35,6 +36,8 @@ Scores and broadcast info come from ESPN's free public scoreboard API (no key, C
 npm install
 npm run dev
 ```
+
+Other scripts: `npm test`, `npm run typecheck`, `npm run build`, `npm run preview`. CI runs typecheck + tests + build on every push and PR.
 
 ## Status
 

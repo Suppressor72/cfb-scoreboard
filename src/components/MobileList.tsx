@@ -25,8 +25,11 @@ export default function MobileList({
       {sorted.map((g) => {
         const kickoff = g.kickoffUtc ? Date.parse(g.kickoffUtc) : null;
         const live = g.phase === "in";
-        const leader =
-          live && (g.home.score ?? 0) >= (g.away.score ?? 0) ? g.home : g.home;
+        const leader = live
+          ? (g.home.score ?? 0) >= (g.away.score ?? 0)
+            ? g.home
+            : g.away
+          : g.home;
         const bg = normalizeHex(leader.color);
         return (
           <li key={g.id}>

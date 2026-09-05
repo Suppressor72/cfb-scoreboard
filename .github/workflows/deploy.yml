@@ -1,0 +1,66 @@
+# Deploys the production build to GitHub Pages after CI passes on main,
+# then smoke-tests the live site (SPEC.md "Deployment contract").
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  smoke:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the deployed site responds
+        run: |
+          url="${{ needs.deploy.outputs.page_url || 'https://suppressor72.github.io/cfb-scoreboard/' }}"
+          # settle: first request after deploy can 404 briefly
+          for i in 1 2 3 4 5; do
+            code=$(curl -s -o /tmp/page.html -w "%{http_code}" --max-time 15 "$url" || true)
+            [ "$code" = "200" ] && break
+            sleep 5
+          done
+          echo "app shell: $code"
+          [ "$code" = "200" ] || exit 1
+          grep -q "CFB Scoreboard" /tmp/page.html || { echo "app shell content missing"; exit 1; }
+      - name: Check the ESPN data source is healthy
+        run: |
+          code=$(curl -s -o /tmp/espn.json -w "%{http_code}" --max-time 15 \
+            "https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?dates=20260905&limit=5" || true)
+          echo "espn api: $code"
+          [ "$code" = "200" ] || exit 1
+          grep -q "leagues" /tmp/espn.json || { echo "unexpected ESPN payload"; exit 1; }

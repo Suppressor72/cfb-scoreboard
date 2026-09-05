@@ -37,7 +37,7 @@ npm install
 npm run dev
 ```
 
-Other scripts: `npm test`, `npm run typecheck`, `npm run build`, `npm run preview`. CI runs typecheck + tests + build on every push and PR.
+Other scripts: `npm test`, `npm run typecheck`, `npm run build`, `npm run preview`. CI runs typecheck + tests + build on every push and PR; a green CI run on main deploys the build to GitHub Pages and smoke-tests the live site.
 
 ## Status
 

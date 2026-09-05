@@ -8,7 +8,7 @@ import { groupByChannel, timeWindow } from "../selectors/lanes";
 const RAIL_PX = 92;
 const PX_PER_MS = 0.00006; // ≈ 216px per hour, 756px per 3.5h game
 const LANE_PX = 46;
-const MIN_BLOCK_PX = 150; // readable floor — callout extends right of true start
+const MIN_BLOCK_PX = 165; // readable floor — callout extends right of true start
 const COLLAPSE_LANES = 2;
 
 interface Props {
@@ -235,9 +235,11 @@ function GameBlock({
 function TeamLine({ team }: { team: Game["home"] }) {
   return (
     <>
-      {team.rank !== undefined && <span className="rank">#{team.rank}</span>}{" "}
-      {team.abbreviation}
-      {team.score !== undefined && <span className="score"> {team.score}</span>}
+      <span className="team-name">
+        {team.rank !== undefined && <span className="rank">#{team.rank}</span>}{" "}
+        {team.abbreviation}
+      </span>
+      {team.score !== undefined && <span className="score">{team.score}</span>}
     </>
   );
 }

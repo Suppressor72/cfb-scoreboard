@@ -10,7 +10,7 @@ import TeamLogo from "./TeamLogo";
 
 const RAIL_PX = 92;
 const MIN_PX_PER_MS = 0.000012; // ≈43px/hour floor — beyond this, scroll
-const LANE_PX = 80;
+const LANE_PX = 64;
 const COLLAPSE_LANES = 2;
 
 interface Props {
@@ -341,9 +341,9 @@ function GameBlock({
       <span className="block-status">
         {live && <span className="pulse-dot" aria-hidden="true" />}
         {live ? `LIVE · ${statusText}` : statusText}
+        {predText && <span className="pred"> · {predText}</span>}
         {g.availability === "unknown" && g.phase === "pre" ? " · TV?" : ""}
       </span>
-      <span className="block-pred">{predText ?? ""}</span>
       <span className={`block-team${g.phase === "post" && g.away.winner ? " won" : ""}`}>
         <TeamLine team={g.away} logoSize={logoSize} />
       </span>

@@ -341,7 +341,7 @@ body {
   padding: calc(4px * var(--s)) calc(6px * var(--s));
   text-align: center;
   align-self: stretch;
-  min-height: calc(80px * var(--s));
+  min-height: calc(64px * var(--s));
 }
 .channel-rail.focused {
   color: var(--accent);
@@ -377,7 +377,7 @@ body {
 .game-block {
   position: absolute;
   top: calc(3px * var(--s));
-  height: calc(74px * var(--s));
+  height: calc(58px * var(--s));
   border: calc(2px * var(--s)) solid var(--line);
   border-radius: calc(6px * var(--s));
   display: flex;
@@ -453,20 +453,17 @@ body {
   opacity: 0.85;
   white-space: nowrap;
 }
-.block-pred {
-  height: calc(16px * var(--s));
-  line-height: calc(16px * var(--s));
-  font-size: 0.66rem;
-  font-weight: 600;
+.block-status .pred {
   color: var(--accent);
-  white-space: nowrap;
+  font-weight: 600;
 }
 /* Quarter-by-quarter columns: right-justified, floated over team meta text.
    background:inherit repaints the block's tint so the numbers mask anything
    they overlap. */
 .block-linescore {
   position: absolute;
-  bottom: calc(2px * var(--s));
+  top: 50%;
+  transform: translateY(-50%);
   right: calc(6px * var(--s));
   display: flex;
   flex-direction: column;

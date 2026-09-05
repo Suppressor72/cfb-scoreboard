@@ -50,7 +50,6 @@ function Linescore({ game }: { game: Game }) {
         ))}
       <td className={`score-cell${t.winner || t.id === leaderId ? " leading" : ""}`}>
         {t.score !== undefined ? t.score : game.phase === "pre" ? "–" : ""}
-        {t.winner ? " ✔" : ""}
       </td>
     </tr>
   );

@@ -123,11 +123,14 @@ GET https://site.api.espn.com/apis/site/v2/sports/football/college-football/summ
 
 Summaries are ~100–275KB each, so they are fetched through a dedicated
 bounded cache (`src/state/predictor.ts`): only pre/in games on the selected
-day, batches of ≤8 with concurrency 3 driven by the scheduler tick, TTLs of
-15 min pre-game / 90 s live, capped at 300 entries, failures keep the last
-value and wait out the TTL instead of hammering. The UI merges predictions
-by game id at render time (`WinProb { teamId, pct }` in the contract);
-scores and blocks show the favored team's abbreviation + percent.
+day, live games prioritized. Day loads burst-fill the whole queue
+(concurrency 6, 150ms pacing between chunks — a full day lands in a few
+seconds); afterwards the scheduler tick maintains it in batches of ≤8 at
+concurrency 3, with TTLs of 15 min pre-game / 90 s live, capped at 300
+entries. Failures keep the last value and wait out the TTL instead of
+hammering. The UI merges predictions by game id at render time
+(`WinProb { teamId, pct }` in the contract); blocks show the favored team's
+abbreviation + percent inline after the time.
 
 ## Local days and timezones
 

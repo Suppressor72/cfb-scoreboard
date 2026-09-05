@@ -94,12 +94,35 @@ describe("predictor cache", () => {
 
     const many = [preGame, liveGame, finalGame];
     await syncPredictors(many);
-    expect(fetched).toEqual([preGame.id, liveGame.id]); // final skipped
+    expect(fetched).toEqual([liveGame.id, preGame.id]); // final skipped, live first
     expect(getPrediction(preGame.id)).toEqual({ teamId: "201", pct: 70 });
 
     // within TTL: no refetch
     await syncPredictors(many);
     expect(fetched).toHaveLength(2);
+    spy.mockRestore();
+  });
+
+  it("burst drains the whole queue; maintenance batches are capped", async () => {
+    const many = Array.from({ length: 20 }, (_, i) =>
+      gameOf(makeEvent({ id: `burst${i}`, date: "2026-09-12T16:00Z" })),
+    );
+    const fetched: string[] = [];
+    const mod = await import("../src/api/predictor");
+    const spy = vi.spyOn(mod, "fetchWinProb").mockImplementation(async (id: string) => {
+      fetched.push(id);
+      return { teamId: "201", pct: 60 };
+    });
+
+    await syncPredictors(many, { burst: true });
+    expect(fetched).toHaveLength(20); // everything, not 8
+
+    fetched.length = 0;
+    const more = Array.from({ length: 12 }, (_, i) =>
+      gameOf(makeEvent({ id: `maint${i}`, date: "2026-09-12T16:00Z" })),
+    );
+    await syncPredictors(more);
+    expect(fetched).toHaveLength(8); // maintenance stays bounded
     spy.mockRestore();
   });
 
@@ -115,7 +138,7 @@ describe("predictor cache", () => {
     await syncPredictors([liveGame]);
     expect(getPrediction(liveGame.id)).toEqual({ teamId: "201", pct: 55 });
     fail = true;
-    await syncPredictors([liveGame], Date.now() + 10 * 60_000); // past TTL
+    await syncPredictors([liveGame], { nowMs: Date.now() + 10 * 60_000 }); // past TTL
     expect(getPrediction(liveGame.id)).toEqual({ teamId: "201", pct: 55 });
     spy.mockRestore();
   });

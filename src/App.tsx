@@ -122,7 +122,7 @@ export default function App() {
     return map;
   }, [dayGames, predVersion]);
   useEffect(() => {
-    if (dayGames.length > 0) void syncPredictors(dayGames);
+    if (dayGames.length > 0) void syncPredictors(dayGames, { burst: true });
   }, [dayGames]);
   const onAxis = useMemo(() => filtered.filter((g) => !g.timeTbd), [filtered]);
   const tba = useMemo(

@@ -56,7 +56,32 @@ export function resetPredictorsForTests(): void {
   version = 0;
 }
 
-export async function syncPredictors(games: Game[], nowMs: number = Date.now()): Promise<void> {
+export interface SyncOptions {
+  nowMs?: number;
+  /** Burst: drain the whole stale queue quickly (day load / switch). */
+  burst?: boolean;
+}
+
+let syncing = false;
+
+export async function syncPredictors(
+  games: Game[],
+  opts: SyncOptions = {},
+): Promise<void> {
+  if (syncing) return; // one sync at a time — no duplicate fetches
+  syncing = true;
+  try {
+    await syncPredictorsInner(games, opts);
+  } finally {
+    syncing = false;
+  }
+}
+
+async function syncPredictorsInner(
+  games: Game[],
+  opts: SyncOptions,
+): Promise<void> {
+  const nowMs = opts.nowMs ?? Date.now();
   const stale: Game[] = [];
   for (const game of games) {
     if (game.phase === "post") continue;
@@ -64,11 +89,19 @@ export async function syncPredictors(games: Game[], nowMs: number = Date.now()):
     const ttl = game.phase === "in" ? LIVE_TTL_MS : PRE_TTL_MS;
     if (!entry || nowMs - entry.fetchedAt > ttl) stale.push(game);
   }
+  // Live games first (most time-sensitive), then by kickoff
+  stale.sort((a, b) => {
+    if (a.phase !== b.phase) return a.phase === "in" ? -1 : 1;
+    const ka = a.kickoffUtc ? Date.parse(a.kickoffUtc) : Infinity;
+    const kb = b.kickoffUtc ? Date.parse(b.kickoffUtc) : Infinity;
+    return ka - kb;
+  });
   prune();
-  const batch = stale.slice(0, BATCH_SIZE);
-  for (let i = 0; i < batch.length; i += CONCURRENCY) {
+  const batch = opts.burst ? stale : stale.slice(0, BATCH_SIZE);
+  const concurrency = opts.burst ? 8 : CONCURRENCY;
+  for (let i = 0; i < batch.length; i += concurrency) {
     await Promise.all(
-      batch.slice(i, i + CONCURRENCY).map(async (game) => {
+      batch.slice(i, i + concurrency).map(async (game) => {
         try {
           const wp = await fetchWinProb(game.id);
           cache.set(game.id, { wp, fetchedAt: Date.now() });
@@ -81,6 +114,11 @@ export async function syncPredictors(games: Game[], nowMs: number = Date.now()):
         }
       }),
     );
+    // Emit per chunk so predictions stream in visibly during a burst
+    emit();
+    // Gentle pacing between chunks during a burst
+    if (opts.burst && i + concurrency < batch.length) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
   }
-  if (batch.length > 0) emit();
 }

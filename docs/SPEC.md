@@ -63,6 +63,10 @@ Overall shape: single-page app, four zones, top to bottom:
 - **Row collapse:** any channel group with more than 2 lanes renders
   collapsed to 2 lanes with a "+N more" chip; expanding shows all lanes. This
   applies to *every* channel (streaming rows included), not just "Other".
+- **Channel reordering:** each rail has a grabber at its bottom-right for
+  drag-and-drop resequencing. The custom sequence persists in localStorage
+  and applies across days and sessions until changed; channels absent from a
+  saved sequence fall in after it in default order.
 - **Horizontal axis = time**, user's local timezone, epoch-ms geometry, at a
   fixed aspect: one hour across equals 1.25× one lane height. The day
   compresses below that only when it would overflow the container, down to a

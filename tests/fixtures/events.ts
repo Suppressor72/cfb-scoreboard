@@ -88,18 +88,21 @@ export function competitor(opts: {
   score?: number | string;
   winner?: boolean;
   record?: string;
+  confRecord?: string;
   /** Points per completed period — ESPN shape: [{value, displayValue}] */
   linescores?: number[];
 }) {
+  const records: Record<string, unknown>[] = [];
+  if (opts.record) records.push({ name: "overall", type: "total", summary: opts.record });
+  if (opts.confRecord)
+    records.push({ name: "vs. Conf.", type: "vsconf", summary: opts.confRecord });
   return {
     id: opts.id,
     homeAway: opts.homeAway,
     curatedRank: { current: opts.rank ?? 99 },
     score: opts.score ?? 0,
     winner: opts.winner === true ? true : undefined,
-    records: opts.record
-      ? [{ name: "overall", type: "total", summary: opts.record }]
-      : undefined,
+    records: records.length > 0 ? records : undefined,
     linescores: opts.linescores?.map((v) => ({ value: v, displayValue: String(v) })),
     team: {
       id: opts.id,

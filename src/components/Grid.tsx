@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Game } from "../api/types";
 import { normalizeHex, teamTint } from "../lib/color";
+import { teamMeta } from "../lib/display";
 import { formatTime } from "../lib/dates";
 import type { Block, ChannelGroup } from "../selectors/lanes";
 import { groupByChannel, timeWindow } from "../selectors/lanes";
@@ -290,12 +291,14 @@ function GameBlock({
 }
 
 function TeamLine({ team }: { team: Game["home"] }) {
+  const meta = teamMeta(team);
   return (
     <>
       <span className="team-name">
         <TeamLogo team={team} size={16} />
         {team.abbreviation}
         {team.rank !== undefined && <span className="rank">#{team.rank}</span>}
+        {meta && <span className="team-meta">{meta}</span>}
       </span>
       {team.score !== undefined && <span className="score">{team.score}</span>}
     </>

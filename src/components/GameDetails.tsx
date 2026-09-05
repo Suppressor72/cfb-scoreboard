@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import type { Game, TeamResult } from "../api/types";
 import { formatTime } from "../lib/dates";
+import { teamMeta } from "../lib/display";
 import TeamLogo from "./TeamLogo";
 
 /**
@@ -32,7 +33,7 @@ function Linescore({ game }: { game: Game }) {
           <TeamLogo team={t} size={22} />
           <span className="details-team-name">
             {t.name}
-            {t.record ? <span className="record"> ({t.record})</span> : null}
+            <span className="record"> {teamMeta(t) ?? ""}</span>
           </span>
           {t.rank !== undefined ? <span className="rank">#{t.rank}</span> : null}
         </span>

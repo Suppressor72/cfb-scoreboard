@@ -198,9 +198,14 @@ function normalizeTeam(
   const rankRaw = isRecord(competitor.curatedRank)
     ? num(competitor.curatedRank.current)
     : undefined;
-  const recordOverall = arr(competitor.records)?.find(
-    (r) => isRecord(r) && r.name === "overall",
-  );
+  const recordEntries = arr(competitor.records) ?? [];
+  const recordSummary = (match: (r: Record<string, unknown>) => boolean): string | undefined => {
+    const entry = recordEntries.find((r) => isRecord(r) && match(r));
+    return isRecord(entry) ? str(entry.summary) : undefined;
+  };
+  const recordOverall = recordSummary((r) => r.name === "overall");
+  // Conference record lives in the "vs. Conf." entry (type "vsconf")
+  const recordConf = recordSummary((r) => r.name === "vs. Conf." || r.type === "vsconf");
 
   return {
     id,
@@ -212,7 +217,8 @@ function normalizeTeam(
     logoDark: `https://a.espncdn.com/i/teamlogos/ncaa/500-dark/${id}.png`,
     color: str(team.color),
     rank: rankRaw !== undefined && rankRaw >= 1 && rankRaw <= 25 ? rankRaw : undefined,
-    record: isRecord(recordOverall) ? str(recordOverall.summary) : undefined,
+    record: recordOverall,
+    conferenceRecord: recordConf,
     conference: CONFERENCE_BY_ID[str(team.conferenceId) ?? ""] ?? undefined,
     // ESPN sends literal 0 pre-game — never expose it (docs/DATA.md);
     // live/final scores arrive as strings and scoreOf accepts both

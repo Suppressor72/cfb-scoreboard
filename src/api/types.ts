@@ -33,7 +33,8 @@ export interface TeamResult {
   logoDark?: string; // dark-background variant, derived from the team id
   color?: string;
   rank?: number; // 1–25 AP; absent = unranked
-  record?: string; // "2-0"; absent = unknown
+  record?: string; // overall "2-0"; absent = unknown
+  conferenceRecord?: string; // "1-0"; absent = unknown
   conference?: string; // normalized name; absent = unknown
   /** Defined only when phase !== "pre" — ESPN sends literal 0 pre-game. */
   score?: number;

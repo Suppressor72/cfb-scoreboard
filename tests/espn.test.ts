@@ -79,6 +79,24 @@ describe("normalizeEvent", () => {
     expect(ot.away.linescores?.reduce((a, b) => a + b, 0)).toBe(ot.away.score);
   });
 
+  it("maps the conference record from the 'vs. Conf.' entry", () => {
+    const raw = makeEvent();
+    const comps = (raw.competitions as { competitors: Record<string, unknown>[] }[])[0]
+      .competitors;
+    const home = comps.find((c) => {
+      const t = c.team as Record<string, unknown>;
+      return t.id === "201";
+    })!;
+    home.records = [
+      { name: "overall", type: "total", summary: "2-0" },
+      { name: "vs. Conf.", type: "vsconf", summary: "1-0" },
+    ];
+    const g = gameOf(raw);
+    expect(g.home.record).toBe("2-0");
+    expect(g.home.conferenceRecord).toBe("1-0");
+    expect(g.home.conference).toBe("Big 12");
+  });
+
   it("keeps winners on final games", () => {
     const g = gameOf(finalEvent);
     expect(g.phase).toBe("post");

@@ -1,6 +1,7 @@
 import type { Game } from "../api/types";
 import { formatTime } from "../lib/dates";
 import { normalizeHex } from "../lib/color";
+import { teamMeta } from "../lib/display";
 import TeamLogo from "./TeamLogo";
 
 /** Compact chronological list — first-class narrow-screen view (SPEC.md). */
@@ -73,11 +74,13 @@ export default function MobileList({
 }
 
 function MobileTeam({ team }: { team: Game["away"] }) {
+  const meta = teamMeta(team);
   return (
     <span className={`mobile-team${team.winner ? " won" : ""}`}>
       <TeamLogo team={team} size={16} />
       {team.abbreviation}
       {team.rank !== undefined && <span className="rank">#{team.rank}</span>}
+      {meta && <span className="team-meta">{meta}</span>}
       {team.score !== undefined && <span className="score"> {team.score}</span>}
     </span>
   );

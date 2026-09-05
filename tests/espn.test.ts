@@ -173,6 +173,18 @@ describe("normalizeEvent", () => {
     expect(gameOf(makeEvent()).odds).toBeUndefined();
   });
 
+  it("maps the gamecast link for every game state, not just pre-game", () => {
+    // Pre-game fixture uses rel "summary"
+    expect(gameOf(makeEvent()).gamecastUrl).toMatch(/^https:\/\/www\.espn\.com\//);
+    // Live events expose live/boxscore/pbp rels instead of summary
+    const raw = makeEvent();
+    raw.links = [
+      { rel: ["desktop", "event", "live"], href: "https://www.espn.com/college-football/game/_/gameId/401856782/x" },
+      { rel: ["boxscore", "desktop", "event"], href: "https://www.espn.com/college-football/game/_/gameId/401856782/box" },
+    ];
+    expect(gameOf(raw).gamecastUrl).toContain("gameId/401856782/x");
+  });
+
   it("rejects malformed events with an error instead of throwing", () => {
     const result = normalizeEvent(malformedEvent);
     expect("error" in result).toBe(true);

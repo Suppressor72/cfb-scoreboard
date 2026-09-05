@@ -304,18 +304,27 @@ function normalizeOdds(competition: Record<string, unknown>): Game["odds"] {
 }
 
 function normalizeGamecastUrl(event: Record<string, unknown>): string | undefined {
+  // Link rels vary by state: pre = summary, live = live/boxscore/pbp,
+  // final = recap. Prefer the richest available.
+  const relPriority = ["summary", "live", "boxscore", "recap", "pbp"];
+  const candidates: { rel: number; href: string }[] = [];
   for (const link of arr(event.links) ?? []) {
     if (!isRecord(link)) continue;
     const rel = arr(link.rel);
     const href = str(link.href);
-    if (!rel?.includes("summary") || !href) continue;
-    // Validate scheme + host before it ever reaches an href
-    try {
-      const u = new URL(href);
-      if (u.protocol === "https:" && u.hostname.endsWith("espn.com")) return href;
-    } catch {
-      // invalid URL — skip
-    }
+    if (!rel || !href) continue;
+    const rank = relPriority.findIndex((r) => rel.includes(r));
+    if (rank >= 0) candidates.push({ rel: rank, href });
+  }
+  candidates.sort((a, b) => a.rel - b.rel);
+  const href = candidates[0]?.href;
+  if (!href) return undefined;
+  // Validate scheme + host before it ever reaches an href
+  try {
+    const u = new URL(href);
+    if (u.protocol === "https:" && u.hostname.endsWith("espn.com")) return href;
+  } catch {
+    // invalid URL — skip
   }
   return undefined;
 }

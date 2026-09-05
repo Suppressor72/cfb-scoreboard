@@ -77,7 +77,7 @@ estimate**:
 | Phase | Left edge | Right edge |
 |---|---|---|
 | Scheduled | kickoff | kickoff + 3h30m |
-| Live | kickoff | max(now, kickoff + 20m floor) |
+| Live | kickoff | kickoff + 3h30m — the slot follows the *schedule*, never "now"; the now-line shows progress through the slot |
 | Final / Final-OT | kickoff | kickoff + 3h30m / 4h00m |
 | Postponed/canceled | scheduled slot | hatched block, "PPD"/"CNCL" |
 

@@ -13,20 +13,20 @@ export interface Block {
   endMs: number;
 }
 
-const BASE_DURATION_MS = 3.5 * 3_600_000; // scheduled + final estimate
+const BASE_DURATION_MS = 3.5 * 3_600_000; // scheduled + live + final estimate
 const OT_DURATION_MS = 4 * 3_600_000; // final with OT estimate
-const LIVE_FLOOR_MS = 20 * 60_000; // live games never render narrower than this
 
-export function blockBounds(game: Game, nowMs: number): Block | null {
+/**
+ * Block geometry: the right edge always follows the *schedule* — a game's
+ * slot is kickoff + estimated duration regardless of live state (the
+ * now-line shows progress through the slot). Live games never stretch or
+ * shrink to "now."
+ */
+export function blockBounds(game: Game): Block | null {
   if (!game.kickoffUtc || game.timeTbd) return null; // TBA strip, not the axis
   const start = Date.parse(game.kickoffUtc);
   if (Number.isNaN(start)) return null;
-  let duration = BASE_DURATION_MS;
-  if (game.phase === "in") {
-    // Live: kickoff → now, with a readable floor
-    return { game, startMs: start, endMs: Math.max(nowMs, start + LIVE_FLOOR_MS) };
-  }
-  if (game.statusKind === "final_ot") duration = OT_DURATION_MS;
+  const duration = game.statusKind === "final_ot" ? OT_DURATION_MS : BASE_DURATION_MS;
   return { game, startMs: start, endMs: start + duration };
 }
 
@@ -40,10 +40,10 @@ export interface ChannelGroup {
  * Greedy interval packing: each game goes into the first lane whose last
  * block ends at/before its start; a new lane is appended when none fits.
  */
-export function groupByChannel(games: Game[], nowMs: number): ChannelGroup[] {
+export function groupByChannel(games: Game[]): ChannelGroup[] {
   const byChannel = new Map<string, Block[]>();
   for (const game of games) {
-    const block = blockBounds(game, nowMs);
+    const block = blockBounds(game);
     if (!block) continue;
     const channel = game.primaryBroadcast ?? OTHER_CHANNEL;
     const list = byChannel.get(channel);

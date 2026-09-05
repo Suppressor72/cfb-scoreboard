@@ -5,8 +5,6 @@ import type { Game } from "../src/api/types";
 import { makeEvent, tbdEvent } from "./fixtures/events";
 import { normalizeEvent } from "../src/api/espn";
 
-const NOW = Date.parse("2026-09-12T21:30:00Z"); // Saturday 5:30pm ET
-
 function gameOf(raw: unknown): Game {
   const r = normalizeEvent(raw);
   if (!("game" in r)) throw new Error("expected game");
@@ -26,28 +24,30 @@ function withBroadcast(names: string[], date: string, id: string): Game {
 describe("blockBounds (geometry estimates)", () => {
   it("gives scheduled and final games 3.5h estimates", () => {
     const g = gameOf(makeEvent({ date: "2026-09-12T16:00Z" }));
-    const b = blockBounds(g, NOW)!;
+    const b = blockBounds(g)!;
     expect(b.startMs).toBe(Date.parse("2026-09-12T16:00:00Z"));
     expect(b.endMs - b.startMs).toBe(3.5 * 3_600_000);
   });
 
   it("gives final-OT games a 4h estimate", () => {
     const g = gameOf(makeEvent({ date: "2026-09-12T16:00Z", status: "final_ot" }));
-    const b = blockBounds(g, NOW)!;
+    const b = blockBounds(g)!;
     expect(b.endMs - b.startMs).toBe(4 * 3_600_000);
   });
 
-  it("sizes live games to now with a 20-minute readable floor", () => {
-    const kickedOffAt = Date.parse("2026-09-12T21:20:00Z"); // 10 min ago
-    const g = gameOf(makeEvent({ date: "2026-09-12T21:20Z", status: "live" }));
-    const b = blockBounds(g, NOW);
-    expect(b?.endMs).toBe(kickedOffAt + 20 * 60_000); // floor wins over now
-    const earlier = gameOf(makeEvent({ date: "2026-09-12T18:00Z", status: "live" }));
-    expect(blockBounds(earlier, NOW)?.endMs).toBe(NOW); // now wins for 3.5h-old game
+  it("keeps live games at their full scheduled window — never sized to now", () => {
+    const kickedOffAt = Date.parse("2026-09-12T21:20:00Z"); // 10 min before NOW
+    const young = gameOf(makeEvent({ date: "2026-09-12T21:20Z", status: "live" }));
+    const b = blockBounds(young)!;
+    expect(b.endMs - b.startMs).toBe(3.5 * 3_600_000);
+    expect(b.startMs).toBe(kickedOffAt);
+    const old = gameOf(makeEvent({ date: "2026-09-12T15:00Z", status: "live" })); // 6.5h old
+    const b2 = blockBounds(old)!;
+    expect(b2.endMs - b2.startMs).toBe(3.5 * 3_600_000);
   });
 
   it("keeps TBD-time games off the axis", () => {
-    expect(blockBounds(gameOf(tbdEvent), NOW)).toBeNull();
+    expect(blockBounds(gameOf(tbdEvent))).toBeNull();
   });
 });
 
@@ -58,7 +58,7 @@ describe("groupByChannel (packed lanes)", () => {
       withBroadcast(["ESPN+"], "2026-09-12T18:00Z", "b"),
       withBroadcast(["ESPN+"], "2026-09-12T18:00Z", "c"),
     ];
-    const groups = groupByChannel(games, NOW);
+    const groups = groupByChannel(games);
     expect(groups).toHaveLength(1);
     expect(groups[0].channel).toBe("ESPN+");
     expect(groups[0].lanes).toHaveLength(3);
@@ -71,7 +71,7 @@ describe("groupByChannel (packed lanes)", () => {
       withBroadcast(["ABC"], "2026-09-12T16:00Z", "a"), // ends 19:30
       withBroadcast(["ABC"], "2026-09-12T19:30Z", "b"), // starts exactly at end
     ];
-    const groups = groupByChannel(games, NOW);
+    const groups = groupByChannel(games);
     expect(groups[0].lanes).toHaveLength(1);
     expect(groups[0].lanes[0].map((b) => b.game.id)).toEqual(["a", "b"]);
   });
@@ -81,7 +81,7 @@ describe("groupByChannel (packed lanes)", () => {
       withBroadcast(["ABC"], "2026-09-12T16:00Z", "a"), // 16:00–19:30
       withBroadcast(["ABC"], "2026-09-12T19:00Z", "b"), // overlaps by 30 min
     ];
-    expect(groupByChannel(games, NOW)[0].lanes).toHaveLength(2);
+    expect(groupByChannel(games)[0].lanes).toHaveLength(2);
   });
 
   it("orders channels: broadcast nets, cable, streams, Other", () => {
@@ -91,7 +91,7 @@ describe("groupByChannel (packed lanes)", () => {
       withBroadcast(["ABC"], "2026-09-12T16:00Z", "a"),
       withBroadcast(["ESPN"], "2026-09-12T16:00Z", "e"),
     ];
-    const names = groupByChannel(games, NOW).map((g) => g.channel);
+    const names = groupByChannel(games).map((g) => g.channel);
     expect(names).toEqual(["ABC", "ESPN", "Disney+", "Other"]);
   });
 
@@ -100,8 +100,8 @@ describe("groupByChannel (packed lanes)", () => {
       withBroadcast(["ESPN+"], "2026-09-12T18:00Z", "a"),
       withBroadcast(["ESPN+"], "2026-09-12T18:00Z", "b"),
     ];
-    const first = groupByChannel(games, NOW).map((g) => g.lanes.map((l) => l.map((b) => b.game.id)));
-    const second = groupByChannel(games, NOW).map((g) => g.lanes.map((l) => l.map((b) => b.game.id)));
+    const first = groupByChannel(games).map((g) => g.lanes.map((l) => l.map((b) => b.game.id)));
+    const second = groupByChannel(games).map((g) => g.lanes.map((l) => l.map((b) => b.game.id)));
     expect(second).toEqual(first);
   });
 });

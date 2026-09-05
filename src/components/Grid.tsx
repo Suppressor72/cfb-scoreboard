@@ -30,12 +30,6 @@ interface Props {
  */
 export default function Grid(props: Props) {
   const { games, tz } = props;
-  // Geometry clock, isolated from the 1s now-line clock (SPEC: stability)
-  const [now30, setNow30] = useState(() => Date.now());
-  useEffect(() => {
-    const t = setInterval(() => setNow30(Date.now()), 30_000);
-    return () => clearInterval(t);
-  }, []);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -49,7 +43,8 @@ export default function Grid(props: Props) {
     return () => ro.disconnect();
   }, []);
 
-  const groups = useMemo(() => groupByChannel(games, now30), [games, now30]);
+  // Lane geometry is a pure function of the schedule — no time clock needed
+  const groups = useMemo(() => groupByChannel(games), [games]);
   const win = useMemo(() => timeWindow(groups), [groups]);
   const durationMs = Math.max(win.endMs - win.startMs, 3_600_000);
 

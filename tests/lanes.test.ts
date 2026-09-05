@@ -95,6 +95,19 @@ describe("groupByChannel (packed lanes)", () => {
     expect(names).toEqual(["ABC", "ESPN", "Disney+", "Other"]);
   });
 
+  it("applies a user-saved channel sequence over the default", () => {
+    const games = [
+      withBroadcast(["ABC"], "2026-09-12T16:00Z", "a"),
+      withBroadcast(["ESPN"], "2026-09-12T16:00Z", "e"),
+      withBroadcast(["FOX"], "2026-09-12T16:00Z", "f"),
+    ];
+    const names = groupByChannel(games, ["ESPN", "FOX", "ABC"]).map((g) => g.channel);
+    expect(names).toEqual(["ESPN", "FOX", "ABC"]);
+    // unlisted channels keep default order after the arranged ones
+    const mixed = groupByChannel(games, ["ESPN"]).map((g) => g.channel);
+    expect(mixed).toEqual(["ESPN", "ABC", "FOX"]);
+  });
+
   it("is stable across recomputation with identical input", () => {
     const games = [
       withBroadcast(["ESPN+"], "2026-09-12T18:00Z", "a"),

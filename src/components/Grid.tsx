@@ -24,6 +24,9 @@ interface Props {
   selectedGameId: string | null;
   /** ESPN Analytics favorite per game id (pre-game predictor / live WP). */
   predictions: Map<string, import("../api/types").WinProb | null>;
+  /** User's persisted channel sequence (empty = default order). */
+  channelOrder: string[];
+  onReorderChannels: (order: string[]) => void;
 }
 
 /**
@@ -33,6 +36,15 @@ interface Props {
  */
 export default function Grid(props: Props) {
   const { games, tz } = props;
+  const [dragging, setDragging] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<string | null>(null);
+
+  // Grabbing cursor for the whole page while a drag is active
+  useEffect(() => {
+    if (dragging === null) return;
+    document.body.classList.add("dnd-grabbing");
+    return () => document.body.classList.remove("dnd-grabbing");
+  }, [dragging]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   // The observer only triggers re-renders; the width is read synchronously
@@ -50,7 +62,29 @@ export default function Grid(props: Props) {
   void resizeTick;
 
   // Lane geometry is a pure function of the schedule — no time clock needed
-  const groups = useMemo(() => groupByChannel(games), [games]);
+  const groups = useMemo(
+    () => groupByChannel(games, props.channelOrder),
+    [games, props.channelOrder],
+  );
+
+  const handleDrop = (targetChannel: string): void => {
+    if (dragging === null || dragging === targetChannel) {
+      setDragging(null);
+      setDropTarget(null);
+      return;
+    }
+    // Move the dragged channel to the target's position in the visible order
+    const order = groups.map((g) => g.channel);
+    const from = order.indexOf(dragging);
+    const to = order.indexOf(targetChannel);
+    if (from >= 0 && to >= 0) {
+      order.splice(to, 0, order.splice(from, 1)[0]);
+      props.onReorderChannels(order);
+    }
+    setDragging(null);
+    setDropTarget(null);
+  };
+
   const win = useMemo(() => timeWindow(groups), [groups]);
   const durationMs = Math.max(win.endMs - win.startMs, 3_600_000);
 
@@ -128,6 +162,11 @@ export default function Grid(props: Props) {
               onSelectGame={props.onSelectGame}
               selectedGameId={props.selectedGameId}
               predictions={props.predictions}
+              dragging={dragging}
+              dropTarget={dropTarget}
+              onDragChannel={setDragging}
+              onDropTarget={setDropTarget}
+              onDropChannel={handleDrop}
             />
           ))}
         </div>
@@ -171,6 +210,11 @@ function ChannelRow({
   onSelectGame,
   selectedGameId,
   predictions,
+  dragging,
+  dropTarget,
+  onDragChannel,
+  onDropTarget,
+  onDropChannel,
 }: {
   group: ChannelGroup;
   pos: (ms: number) => number;
@@ -187,6 +231,11 @@ function ChannelRow({
   onSelectGame: (id: string, origin: { x: number; y: number }) => void;
   selectedGameId: string | null;
   predictions: Map<string, import("../api/types").WinProb | null>;
+  dragging: string | null;
+  dropTarget: string | null;
+  onDragChannel: (channel: string | null) => void;
+  onDropTarget: (channel: string | null) => void;
+  onDropChannel: (target: string) => void;
 }) {
   const collapsible = group.lanes.length > COLLAPSE_LANES;
   const collapsed = collapsible && !expanded.has(group.channel);
@@ -200,20 +249,51 @@ function ChannelRow({
     <div
       className={`channel-row${focusChannel && !focused ? " dimmed" : ""}${
         group.kind === "stream" ? " stream-row" : ""
+      }${dragging === group.channel ? " dragging" : ""}${
+        dropTarget === group.channel && dragging !== null ? " drop-target" : ""
       }`}
       role="group"
       aria-label={`${group.channel} schedule`}
+      onDragOver={(e) => {
+        if (dragging === null || dragging === group.channel) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        onDropTarget(group.channel);
+      }}
+      onDragLeave={() => onDropTarget(null)}
+      onDrop={(e) => {
+        e.preventDefault();
+        onDropChannel(group.channel);
+      }}
     >
-      <button
-        type="button"
-        className={`channel-rail${focused ? " focused" : ""}`}
-        style={{ width: railPx }}
-        aria-pressed={focused}
-        title={focused ? "Clear channel focus" : "Focus this channel"}
-        onClick={() => onToggleChannel(focused ? null : group.channel)}
-      >
-        {group.channel}
-      </button>
+      <div className={`channel-rail${focused ? " focused" : ""}`} style={{ width: railPx }}>
+        <span
+          className="channel-grab"
+          draggable
+          aria-hidden="true"
+          title="Drag to reorder channels"
+          onDragStart={(e) => {
+            e.dataTransfer.setData("text/plain", group.channel);
+            e.dataTransfer.effectAllowed = "move";
+            onDragChannel(group.channel);
+          }}
+          onDragEnd={() => {
+            onDragChannel(null);
+            onDropTarget(null);
+          }}
+        >
+          ⠿
+        </span>
+        <button
+          type="button"
+          className="channel-name"
+          aria-pressed={focused}
+          title={focused ? "Clear channel focus" : "Focus this channel"}
+          onClick={() => onToggleChannel(focused ? null : group.channel)}
+        >
+          {group.channel}
+        </button>
+      </div>
       <div className="channel-lanes">
         {lanes.map((lane, i) => (
           <div className="lane" key={i} style={{ height: lanePx }}>

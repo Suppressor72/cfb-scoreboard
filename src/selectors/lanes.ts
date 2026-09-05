@@ -40,7 +40,11 @@ export interface ChannelGroup {
  * Greedy interval packing: each game goes into the first lane whose last
  * block ends at/before its start; a new lane is appended when none fits.
  */
-export function groupByChannel(games: Game[]): ChannelGroup[] {
+/**
+ * @param order user's persisted channel sequence; channels listed there sort
+ * by position, unlisted channels fall back to the default order after them.
+ */
+export function groupByChannel(games: Game[], order?: string[]): ChannelGroup[] {
   const byChannel = new Map<string, Block[]>();
   for (const game of games) {
     const block = blockBounds(game);
@@ -74,11 +78,16 @@ export function groupByChannel(games: Game[]): ChannelGroup[] {
     groups.push({ channel, kind: channelInfo(channel).kind, lanes });
   }
 
-  groups.sort(
-    (a, b) =>
+  const pos = new Map((order ?? []).map((name, i) => [name, i]));
+  groups.sort((a, b) => {
+    const pa = pos.get(a.channel) ?? Number.MAX_SAFE_INTEGER;
+    const pb = pos.get(b.channel) ?? Number.MAX_SAFE_INTEGER;
+    if (pa !== pb) return pa - pb; // user sequence wins
+    return (
       channelInfo(a.channel).order - channelInfo(b.channel).order ||
-      a.channel.localeCompare(b.channel),
-  );
+      a.channel.localeCompare(b.channel)
+    );
+  });
   return groups;
 }
 

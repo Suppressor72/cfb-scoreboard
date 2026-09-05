@@ -27,6 +27,19 @@ import {
 import type { WinProb } from "./api/types";
 
 const FILTERS_KEY = "cfb-scoreboard:filters:v1";
+const CHANNELS_KEY = "cfb-scoreboard:channels:v1";
+
+function loadChannelOrder(): string[] {
+  try {
+    const raw = localStorage.getItem(CHANNELS_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((c): c is string => typeof c === "string");
+  } catch {
+    return [];
+  }
+}
 
 function loadFilters(): Filters {
   try {
@@ -74,6 +87,15 @@ export default function App() {
   }, []);
   const [focusChannel, setFocusChannel] = useState<string | null>(null);
   const [expandedChannels, setExpandedChannels] = useState<Set<string>>(new Set());
+  const [channelOrder, setChannelOrder] = useState<string[]>(loadChannelOrder);
+  const handleReorderChannels = useCallback((order: string[]) => {
+    setChannelOrder(order);
+    try {
+      localStorage.setItem(CHANNELS_KEY, JSON.stringify(order));
+    } catch {
+      // storage unavailable — order persists for this session only
+    }
+  }, []);
   const [narrow, setNarrow] = useState(
     () => typeof matchMedia !== "undefined" && matchMedia("(max-width: 719px)").matches,
   );
@@ -230,6 +252,8 @@ export default function App() {
                 games={onAxis}
                 tz={TZ}
                 predictions={predictions}
+                channelOrder={channelOrder}
+                onReorderChannels={handleReorderChannels}
                 focusChannel={focusChannel}
                 expandedChannels={expandedChannels}
                 onToggleChannel={setFocusChannel}

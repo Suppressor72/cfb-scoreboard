@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { Game } from "../api/types";
 import { formatTime } from "../lib/dates";
+import TeamLogo from "./TeamLogo";
 
 /**
  * Non-modal game details. Escape closes; focus starts on the close button
@@ -47,9 +48,12 @@ export default function GameDetails({
             {[game.away, game.home].map((t) => (
               <tr key={t.id}>
                 <td>
-                  {t.rank !== undefined && `#${t.rank} `}
-                  {t.name}
-                  {t.record ? ` (${t.record})` : ""}
+                  <span className="details-team">
+                    <TeamLogo team={t} size={22} />
+                    {t.rank !== undefined && `#${t.rank} `}
+                    {t.name}
+                    {t.record ? ` (${t.record})` : ""}
+                  </span>
                 </td>
                 <td className="score-cell">
                   {t.score !== undefined ? t.score : game.phase === "pre" ? "–" : ""}

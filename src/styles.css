@@ -321,7 +321,7 @@ body {
   padding: 4px 6px;
   text-align: center;
   align-self: stretch;
-  min-height: 46px;
+  min-height: 60px;
 }
 .channel-rail.focused {
   color: var(--accent);
@@ -357,7 +357,7 @@ body {
 .game-block {
   position: absolute;
   top: 3px;
-  height: 40px;
+  height: 54px;
   border: none;
   border-radius: 6px;
   display: flex;
@@ -379,10 +379,20 @@ body {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
+.team-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.team-logo {
+  object-fit: contain;
+  flex: none;
+}
 .block-team {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
   gap: 6px;
   font-size: 0.78rem;
   font-weight: 600;
@@ -491,6 +501,11 @@ body {
   gap: 2px;
   font-weight: 600;
 }
+.mobile-team {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
 .mobile-team.won {
   font-weight: 800;
 }
@@ -551,6 +566,11 @@ body {
 .details-table td {
   border-top: 1px solid var(--line);
   padding: 7px 4px;
+}
+.details-team {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 .score-cell {
   text-align: right;

@@ -4,11 +4,12 @@ import { normalizeHex, textColorFor } from "../lib/color";
 import { formatTime } from "../lib/dates";
 import type { Block, ChannelGroup } from "../selectors/lanes";
 import { groupByChannel, timeWindow } from "../selectors/lanes";
+import TeamLogo from "./TeamLogo";
 
 const RAIL_PX = 92;
 const FALLBACK_PX_PER_MS = 0.00006; // ≈216px/hour, used before first measure
 const MIN_PX_PER_MS = 0.000012; // ≈43px/hour floor — beyond this, scroll
-const LANE_PX = 46;
+const LANE_PX = 60;
 const COLLAPSE_LANES = 2;
 
 interface Props {
@@ -287,6 +288,7 @@ function TeamLine({ team }: { team: Game["home"] }) {
   return (
     <>
       <span className="team-name">
+        <TeamLogo team={team} size={16} />
         {team.rank !== undefined && <span className="rank">#{team.rank}</span>}{" "}
         {team.abbreviation}
       </span>

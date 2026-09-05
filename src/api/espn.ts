@@ -139,6 +139,23 @@ function espnPhase(state: unknown): Phase {
 /** Terminal statuses where a winner legitimately exists. */
 const WINNER_STATUSES: ReadonlySet<StatusKind> = new Set(["final", "final_ot"]);
 
+/** Only intended HTTPS ESPN destinations may render as images/links (A13). */
+function safeEspnUrl(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  try {
+    const u = new URL(url);
+    if (
+      u.protocol === "https:" &&
+      (u.hostname === "a.espncdn.com" || u.hostname.endsWith(".espncdn.com") || u.hostname.endsWith("espn.com"))
+    ) {
+      return url;
+    }
+  } catch {
+    // invalid URL — reject
+  }
+  return undefined;
+}
+
 function normalizeTeam(
   competitor: unknown,
   phase: Phase,
@@ -163,7 +180,10 @@ function normalizeTeam(
     id,
     name,
     abbreviation,
-    logo: str(team.logo),
+    logo: safeEspnUrl(str(team.logo)),
+    // Dark-background variant (what ESPN's own dark mode serves), derived
+    // from the stable team id; UI falls back to `logo` if it 404s.
+    logoDark: `https://a.espncdn.com/i/teamlogos/ncaa/500-dark/${id}.png`,
     color: str(team.color),
     rank: rankRaw !== undefined && rankRaw >= 1 && rankRaw <= 25 ? rankRaw : undefined,
     record: isRecord(recordOverall) ? str(recordOverall.summary) : undefined,

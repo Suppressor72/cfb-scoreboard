@@ -50,8 +50,7 @@ describe("normalizeEvent", () => {
 
   it("keeps roles, ranks, records, conference, venue, and gamecast link", () => {
     const g = gameOf(makeEvent());
-    expect(g.away.abbreviation).toBe("ORE");
-    expect(g.home.abbreviation).toBe("OKST");
+    expect(g.away.abbreviation).toBe("ORE");    expect(g.home.abbreviation).toBe("OKST");
     expect(g.away.rank).toBe(12);
     expect(g.home.rank).toBeUndefined(); // curatedRank 99 = unranked
     expect(g.away.conference).toBe("Big Ten"); // conferenceId 5
@@ -101,6 +100,24 @@ describe("normalizeEvent", () => {
     expect(g.broadcasts).toEqual([]);
     expect(g.primaryBroadcast).toBeNull();
     expect(g.availability).toBe("unknown");
+  });
+
+  it("validates logo URLs and derives the dark-background variant", () => {
+    const g = gameOf(makeEvent());
+    expect(g.home.logo).toBe("https://a.espncdn.com/i/teamlogos/ncaa/500/201.png");
+    expect(g.home.logoDark).toBe(
+      "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/201.png",
+    );
+    // Foreign/non-HTTPS logo URLs are rejected, never rendered
+    const raw = makeEvent();
+    const home = (
+      raw.competitions as { competitors: { team: Record<string, unknown> }[] }[]
+    )[0].competitors.find((c) => c.team.id === "201");
+    if (!home) throw new Error("fixture home competitor missing");
+    home.team.logo = "http://evil.example/logo.png";
+    const g2 = gameOf(raw);
+    expect(g2.home.logo).toBeUndefined();
+    expect(g2.home.logoDark).toBeDefined(); // derived from the id, still fine
   });
 
   it("rejects malformed events with an error instead of throwing", () => {

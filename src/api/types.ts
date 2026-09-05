@@ -29,7 +29,8 @@ export interface TeamResult {
   id: string; // stable provider team id (conference join key)
   name: string;
   abbreviation: string;
-  logo?: string;
+  logo?: string; // validated https espn CDN URL (standard variant)
+  logoDark?: string; // dark-background variant, derived from the team id
   color?: string;
   rank?: number; // 1–25 AP; absent = unranked
   record?: string; // "2-0"; absent = unknown

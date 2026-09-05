@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import type { Game, TeamResult, WinProb } from "../api/types";
 import { formatTime } from "../lib/dates";
 import { leadingTeamId, teamMeta } from "../lib/display";
@@ -6,8 +6,9 @@ import { uiScale } from "../lib/uiScale";
 import TeamLogo from "./TeamLogo";
 
 /**
- * Non-modal game details. Escape closes; focus starts on the close button
- * and returns to it (the grid button keeps its own focus on reopen).
+ * Non-modal game details, floating with its top-left at the click point
+ * (clamped to the viewport). Escape closes; focus starts on the close
+ * button.
  */
 
 /**
@@ -81,14 +82,33 @@ export default function GameDetails({
   game,
   tz,
   winProb,
+  origin,
   onClose,
 }: {
   game: Game;
   tz: string;
   winProb: WinProb | null;
+  origin: { x: number; y: number } | null;
   onClose: () => void;
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
+  const [pos, setPos] = useState<{ left: number; top: number }>({
+    left: origin?.x ?? 40,
+    top: origin?.y ?? 40,
+  });
+
+  // Clamp so the panel never leaves the viewport (measure after mount)
+  useLayoutEffect(() => {
+    const el = panelRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    setPos({
+      left: Math.max(8, Math.min(pos.left, window.innerWidth - rect.width - 8)),
+      top: Math.max(8, Math.min(pos.top, window.innerHeight - rect.height - 8)),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game.id]);
 
   useEffect(() => {
     closeRef.current?.focus();
@@ -127,7 +147,9 @@ export default function GameDetails({
   return (
     <div className="details-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <section
+        ref={panelRef}
         className="details-panel"
+        style={{ left: pos.left, top: pos.top }}
         role="dialog"
         aria-modal="false"
         aria-label={`${game.away.name} at ${game.home.name} details`}

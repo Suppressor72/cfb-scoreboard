@@ -14,7 +14,7 @@ export default function MobileList({
   games: Game[];
   tz: string;
   predictions: Map<string, import("../api/types").WinProb | null>;
-  onSelectGame: (id: string) => void;
+  onSelectGame: (id: string, origin: { x: number; y: number }) => void;
 }) {
   const sorted = [...games].sort((a, b) => {
     const ka = a.kickoffUtc ? Date.parse(a.kickoffUtc) : Infinity;
@@ -49,7 +49,7 @@ export default function MobileList({
               type="button"
               className="mobile-card"
               style={bg ? { borderLeftColor: bg } : undefined}
-              onClick={() => onSelectGame(g.id)}
+              onClick={(e) => onSelectGame(g.id, { x: e.clientX, y: e.clientY })}
             >
               <span className="mobile-when">
                 {g.timeTbd

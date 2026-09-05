@@ -65,6 +65,13 @@ export default function App() {
   const [selectedDay, setSelectedDay] = useState(INITIAL.day);
   const [filters, setFilters] = useState<Filters>(loadFilters);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
+  const [popupOrigin, setPopupOrigin] = useState<{ x: number; y: number } | null>(
+    null,
+  );
+  const selectGame = useCallback((id: string, origin: { x: number; y: number }) => {
+    setSelectedGameId(id);
+    setPopupOrigin(origin);
+  }, []);
   const [focusChannel, setFocusChannel] = useState<string | null>(null);
   const [expandedChannels, setExpandedChannels] = useState<Set<string>>(new Set());
   const [narrow, setNarrow] = useState(
@@ -234,7 +241,7 @@ export default function App() {
                 games={filtered}
                 tz={TZ}
                 predictions={predictions}
-                onSelectGame={(id) => setSelectedGameId(id)}
+                onSelectGame={selectGame}
               />
             ) : (
               <Grid
@@ -252,7 +259,7 @@ export default function App() {
                     return next;
                   })
                 }
-                onSelectGame={(id) => setSelectedGameId(id)}
+                onSelectGame={selectGame}
                 selectedGameId={selectedGameId}
               />
             )}
@@ -265,7 +272,7 @@ export default function App() {
                     key={g.id}
                     type="button"
                     className="tba-game"
-                    onClick={() => setSelectedGameId(g.id)}
+                    onClick={(e) => selectGame(g.id, { x: e.clientX, y: e.clientY })}
                   >
                     {g.away.abbreviation} vs {g.home.abbreviation}
                     {g.primaryBroadcast ? ` · ${g.primaryBroadcast}` : ""}
@@ -306,6 +313,7 @@ export default function App() {
           game={selectedGame}
           tz={TZ}
           winProb={predictions.get(selectedGame.id) ?? null}
+          origin={popupOrigin}
           onClose={() => setSelectedGameId(null)}
         />
       )}

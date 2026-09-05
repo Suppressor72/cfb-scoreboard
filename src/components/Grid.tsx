@@ -20,7 +20,7 @@ interface Props {
   expandedChannels: Set<string>;
   onToggleChannel: (channel: string | null) => void;
   onToggleExpand: (channel: string) => void;
-  onSelectGame: (id: string) => void;
+  onSelectGame: (id: string, origin: { x: number; y: number }) => void;
   selectedGameId: string | null;
   /** ESPN Analytics favorite per game id (pre-game predictor / live WP). */
   predictions: Map<string, import("../api/types").WinProb | null>;
@@ -184,7 +184,7 @@ function ChannelRow({
   expanded: Set<string>;
   onToggleChannel: (channel: string | null) => void;
   onToggleExpand: (channel: string) => void;
-  onSelectGame: (id: string) => void;
+  onSelectGame: (id: string, origin: { x: number; y: number }) => void;
   selectedGameId: string | null;
   predictions: Map<string, import("../api/types").WinProb | null>;
 }) {
@@ -273,7 +273,7 @@ function GameBlock({
   minBlockPx: number;
   logoSize: number;
   tz: string;
-  onSelectGame: (id: string) => void;
+  onSelectGame: (id: string, origin: { x: number; y: number }) => void;
   selected: boolean;
   winProb: import("../api/types").WinProb | null;
 }) {
@@ -336,7 +336,7 @@ function GameBlock({
         backgroundImage: tint ? `linear-gradient(${tint}, ${tint})` : undefined,
       }}
       aria-label={`${g.away.name} at ${g.home.name}, ${statusText}`}
-      onClick={() => onSelectGame(g.id)}
+      onClick={(e) => onSelectGame(g.id, { x: e.clientX, y: e.clientY })}
     >
       <span className="block-status">
         {live && <span className="pulse-dot" aria-hidden="true" />}

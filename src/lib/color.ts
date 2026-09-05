@@ -6,6 +6,16 @@ export function normalizeHex(hex: string | undefined): string | undefined {
   return `#${m[1].toLowerCase()}`;
 }
 
+/** Low-alpha team tint for block backgrounds over the neutral panel color. */
+export function teamTint(hex: string | undefined): string | undefined {
+  const normalized = normalizeHex(hex);
+  if (!normalized) return undefined;
+  const r = parseInt(normalized.slice(1, 3), 16);
+  const g = parseInt(normalized.slice(3, 5), 16);
+  const b = parseInt(normalized.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, 0.18)`;
+}
+
 /** WCAG-ish contrast pick for text on team-brand-colored blocks. */
 export function textColorFor(hex: string | undefined): string {
   if (!hex) return "#e8eaed";

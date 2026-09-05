@@ -321,7 +321,7 @@ body {
   padding: 4px 6px;
   text-align: center;
   align-self: stretch;
-  min-height: 60px;
+  min-height: 64px;
 }
 .channel-rail.focused {
   color: var(--accent);
@@ -353,22 +353,27 @@ body {
   border-color: var(--accent);
 }
 
-/* Game blocks */
+/* Game blocks: neutral panel + team-color border and subtle tint */
 .game-block {
   position: absolute;
   top: 3px;
-  height: 54px;
-  border: none;
+  height: 58px;
+  border: 2px solid var(--line);
   border-radius: 6px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 1px;
-  padding: 3px 8px;
+  padding: 2px 7px;
+  background: var(--panel-2);
+  color: var(--text);
   text-align: left;
   cursor: pointer;
   overflow: hidden;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+.game-block.live {
+  box-shadow: 0 0 0 1px rgba(255, 93, 93, 0.35), 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 .game-block:hover,
 .game-block:focus-visible {
@@ -421,6 +426,10 @@ body {
     #2a303c 6px,
     #2a303c 12px
   ) !important;
+  border-color: #3a4150 !important;
+}
+.game-block.won .score {
+  font-weight: 800;
 }
 
 .pulse-dot {

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Game } from "../api/types";
-import { normalizeHex, textColorFor } from "../lib/color";
+import { normalizeHex, teamTint } from "../lib/color";
 import { formatTime } from "../lib/dates";
 import type { Block, ChannelGroup } from "../selectors/lanes";
 import { groupByChannel, timeWindow } from "../selectors/lanes";
@@ -9,7 +9,7 @@ import TeamLogo from "./TeamLogo";
 const RAIL_PX = 92;
 const FALLBACK_PX_PER_MS = 0.00006; // ≈216px/hour, used before first measure
 const MIN_PX_PER_MS = 0.000012; // ≈43px/hour floor — beyond this, scroll
-const LANE_PX = 60;
+const LANE_PX = 64;
 const COLLAPSE_LANES = 2;
 
 interface Props {
@@ -243,13 +243,15 @@ function GameBlock({
   const ppd =
     g.statusKind === "postponed" ? "PPD" : g.statusKind === "canceled" ? "CNCL" : null;
 
-  const leader = live
+  // Border/tint color: leading team live, winner when final, home pre-game
+  const accentTeam = live
     ? (g.home.score ?? 0) >= (g.away.score ?? 0)
       ? g.home
       : g.away
-    : g.home;
-  const bg = normalizeHex(leader.color);
-  const fg = textColorFor(bg);
+    : g.phase === "post"
+      ? ((g.home.winner ? g.home : g.away.winner ? g.away : g.home) as typeof g.home)
+      : g.home;
+  const accent = normalizeHex(accentTeam.color);
 
   const statusText = ppd
     ? ppd
@@ -265,20 +267,25 @@ function GameBlock({
     <button
       type="button"
       className={`game-block${live ? " live" : ""}${ppd ? " ppd" : ""}${selected ? " selected" : ""}`}
-      style={{ left: pos(block.startMs), width, backgroundColor: bg, color: fg }}
+      style={{
+        left: pos(block.startMs),
+        width,
+        borderColor: accent,
+        background: teamTint(accent),
+      }}
       aria-label={`${g.away.name} at ${g.home.name}, ${statusText}`}
       onClick={() => onSelectGame(g.id)}
     >
+      <span className="block-status">
+        {live && <span className="pulse-dot" aria-hidden="true" />}
+        {live ? `LIVE · ${statusText}` : statusText}
+        {g.availability === "unknown" && g.phase === "pre" ? " · TV?" : ""}
+      </span>
       <span className={`block-team${g.phase === "post" && g.away.winner ? " won" : ""}`}>
         <TeamLine team={g.away} />
       </span>
       <span className={`block-team${g.phase === "post" && g.home.winner ? " won" : ""}`}>
         <TeamLine team={g.home} />
-      </span>
-      <span className="block-status">
-        {live && <span className="pulse-dot" aria-hidden="true" />}
-        {live ? `LIVE · ${statusText}` : statusText}
-        {g.availability === "unknown" && g.phase === "pre" ? " · TV?" : ""}
       </span>
     </button>
   );

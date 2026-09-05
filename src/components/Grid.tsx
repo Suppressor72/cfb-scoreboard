@@ -235,6 +235,15 @@ function ChannelRow({
             +{hiddenCount} more game{hiddenCount === 1 ? "" : "s"} on {group.channel}
           </button>
         )}
+        {!collapsed && collapsible && (
+          <button
+            type="button"
+            className="expand-chip"
+            onClick={() => onToggleExpand(group.channel)}
+          >
+            Show fewer
+          </button>
+        )}
       </div>
     </div>
   );

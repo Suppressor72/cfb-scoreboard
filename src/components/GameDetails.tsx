@@ -108,12 +108,11 @@ export default function GameDetails({
         aria-modal="false"
         aria-label={`${game.away.name} at ${game.home.name} details`}
       >
-        <button type="button" className="details-close" ref={closeRef} onClick={onClose}>
-          Close ✕
-        </button>
-        <h2>
-          {game.away.name} at {game.home.name}
-        </h2>
+        <div className="details-close-row">
+          <button type="button" className="details-close" ref={closeRef} onClick={onClose}>
+            Close ✕
+          </button>
+        </div>
         <Linescore game={game} />
         <p>
           {game.timeTbd

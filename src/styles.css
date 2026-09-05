@@ -637,13 +637,16 @@ body {
   padding: 16px 18px 22px;
   width: min(480px, 100vw);
 }
+.details-close-row {
+  display: flex;
+  justify-content: flex-end;
+}
 .details-close {
   background: none;
   border: 1px solid var(--line);
   border-radius: 6px;
   color: var(--muted);
   cursor: pointer;
-  float: right;
   padding: 3px 10px;
 }
 .details-panel h2 {

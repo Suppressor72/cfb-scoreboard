@@ -637,8 +637,8 @@ body {
   background: var(--panel-2);
   border: 1px solid var(--line);
   border-radius: 14px 14px 0 0;
-  padding: 16px 18px 22px;
-  width: min(480px, 100vw);
+  padding: 16px 20px 22px;
+  width: min(640px, 100vw);
 }
 .details-close-row {
   display: flex;
@@ -696,7 +696,7 @@ body {
 }
 .period-cell {
   text-align: center;
-  min-width: 26px;
+  min-width: 38px; /* comfortable room for double-digit quarters */
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
@@ -708,6 +708,7 @@ thead .score-cell {
 }
 .score-cell {
   text-align: right;
+  min-width: 44px;
   font-weight: 800;
 }
 .details-panel a {

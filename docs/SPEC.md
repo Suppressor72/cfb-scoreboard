@@ -25,9 +25,8 @@ Overall shape: single-page app, four zones, top to bottom:
   season/week numbering and is labeled by dates, not "Week N".
 - Tab badges: live-game count while live, subtle "done" tick when all games
   final.
-- Overnight games stay on their kickoff date's tab; if yesterday's game is
-  still live, today's tab shows a one-line carryover ("Still live: HAW 21 —
-  UNLV 17, Q4") linking to yesterday's tab.
+- Overnight games stay on their kickoff date's tab (no cross-day carryover
+  notice — removed by user preference; yesterday's tab keeps live games).
 
 ## Filters
 

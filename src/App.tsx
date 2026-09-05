@@ -154,11 +154,6 @@ export default function App() {
     if (!snapshot) return days;
     return days.filter((day) => day === selectedDay || (badges[day]?.count ?? 0) > 0);
   }, [days, snapshot, selectedDay, badges]);
-  const carryover = useMemo(() => {
-    if (!snapshot) return [];
-    const prev = addDaysIso(selectedDay, -1);
-    return gamesForDay(snapshot.games, prev, TZ).filter((g) => g.phase === "in");
-  }, [snapshot, selectedDay]);
   const selectedGame = useMemo(
     () => dayGames.find((g) => g.id === selectedGameId) ?? null,
     [dayGames, selectedGameId],
@@ -205,19 +200,6 @@ export default function App() {
       />
 
       <FilterBar filters={filters} onChange={setFilters} />
-
-      {carryover.length > 0 && (
-        <div className="carryover">
-          Still live from yesterday:{" "}
-          {carryover.map((g, i) => (
-            <span key={g.id}>
-              {i > 0 && ", "}
-              {g.away.abbreviation} {g.away.score ?? "–"} – {g.home.score ?? "–"}{" "}
-              {g.home.abbreviation} ({g.statusDetail})
-            </span>
-          ))}
-        </div>
-      )}
 
       <main>
         {week.state === "error" && !snapshot ? (

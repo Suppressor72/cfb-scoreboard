@@ -38,7 +38,7 @@ export default function MobileList({
         const bg = normalizeHex(leader.color);
         const wp = predictions.get(g.id) ?? null;
         let predText = "";
-        if (wp && wp.pct > 0) {
+        if (wp && wp.pct > 0 && g.phase !== "post") {
           const team =
             wp.teamId === g.home.id ? g.home : wp.teamId === g.away.id ? g.away : null;
           if (team) predText = ` · ${team.abbreviation} ${wp.pct}%`;

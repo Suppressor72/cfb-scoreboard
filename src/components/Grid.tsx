@@ -397,9 +397,10 @@ function GameBlock({
     g.phase === "in" || !!(g.home.linescores?.length || g.away.linescores?.length);
   const leaderId = leadingTeamId(g);
 
-  // ESPN Analytics favorite: predictor before kickoff, live WP during
+  // ESPN Analytics favorite: predictor before kickoff, live WP during —
+  // never once the game is final
   let predText: string | null = null;
-  if (winProb && winProb.pct > 0) {
+  if (winProb && winProb.pct > 0 && g.phase !== "post") {
     const team =
       winProb.teamId === g.home.id ? g.home : winProb.teamId === g.away.id ? g.away : null;
     if (team) predText = `${team.abbreviation} ${winProb.pct}%`;

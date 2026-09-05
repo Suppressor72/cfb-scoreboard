@@ -46,11 +46,13 @@ are observed, not assumed:
 GET https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?dates=YYYYMMDD-YYYYMMDD&limit=300
 ```
 
-Optional `groups=ID` filters to games involving a conference/group. Known IDs
-(verify against fixtures before relying on them): ACC=1, Big 12=4, Big Ten=5,
-SEC=7, FBS Independents=18. Other observed IDs (9, 15, 17, 21, 37, 48, 151, …)
-belong to other conferences; ship a static id→name map for the ones we display
-and bucket the rest under "Other". The app fetches **unfiltered** range data
+Optional `groups=ID` filters to games involving a conference/group.
+Verified `conferenceId` values (probed against 2026-09-05 games; `src/api/conferences.ts`
+is the canonical map): ACC=1, Big 12=4, Big Ten=5, **SEC=8**, Pac-12=9,
+C-USA=12, MAC=15, Mountain West=17, FBS Independents=18, Sun Belt=37, CAA=48,
+American=151. Unknown IDs bucket under "Other conferences" and never match a
+conference filter. (An early draft carried SEC=7 from memory — it silently
+broke the SEC filter until probed. Lesson applied: probe, don't recall.) The app fetches **unfiltered** range data
 and filters client-side; `groups` is documented because it composes with
 ranges if we ever need to shrink payloads.
 

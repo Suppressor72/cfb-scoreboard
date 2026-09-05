@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Game } from "../api/types";
 import { normalizeHex, textColorFor } from "../lib/color";
 import { formatTime } from "../lib/dates";
@@ -6,9 +6,9 @@ import type { Block, ChannelGroup } from "../selectors/lanes";
 import { groupByChannel, timeWindow } from "../selectors/lanes";
 
 const RAIL_PX = 92;
-const PX_PER_MS = 0.00006; // ≈ 216px per hour, 756px per 3.5h game
+const FALLBACK_PX_PER_MS = 0.00006; // ≈216px/hour, used before first measure
+const MIN_PX_PER_MS = 0.000012; // ≈43px/hour floor — beyond this, scroll
 const LANE_PX = 46;
-const MIN_BLOCK_PX = 165; // readable floor — callout extends right of true start
 const COLLAPSE_LANES = 2;
 
 interface Props {
@@ -22,6 +22,11 @@ interface Props {
   selectedGameId: string | null;
 }
 
+/**
+ * TV-guide grid. The horizontal scale is responsive: the whole day is
+ * compressed to fit the container width so there is no left/right
+ * scrolling, with a density floor below which scrolling returns.
+ */
 export default function Grid(props: Props) {
   const { games, tz } = props;
   // Geometry clock, isolated from the 1s now-line clock (SPEC: stability)
@@ -31,22 +36,44 @@ export default function Grid(props: Props) {
     return () => clearInterval(t);
   }, []);
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) setContainerWidth(entry.contentRect.width);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   const groups = useMemo(() => groupByChannel(games, now30), [games, now30]);
   const win = useMemo(() => timeWindow(groups), [groups]);
-  const durationPx = Math.max((win.endMs - win.startMs) * PX_PER_MS, 720);
+  const durationMs = Math.max(win.endMs - win.startMs, 3_600_000);
+
+  const pxPerMs =
+    containerWidth > RAIL_PX + 100
+      ? Math.max(MIN_PX_PER_MS, (containerWidth - RAIL_PX - 8) / durationMs)
+      : FALLBACK_PX_PER_MS;
+  const durationPx = durationMs * pxPerMs;
+  const hourPx = pxPerMs * 3_600_000;
+  const minBlockPx = Math.max(56, Math.min(165, hourPx * 1.3));
   const hasLive = games.some((g) => g.phase === "in");
 
+  const tickStepHours = hourPx >= 55 ? 1 : hourPx >= 28 ? 2 : 4;
   const ticks = useMemo(() => {
+    const stepMs = tickStepHours * 3_600_000;
     const out: number[] = [];
-    const first = Math.ceil(win.startMs / 3_600_000) * 3_600_000;
-    for (let t = first; t <= win.endMs; t += 3_600_000) out.push(t);
+    const first = Math.ceil(win.startMs / stepMs) * stepMs;
+    for (let t = first; t <= win.endMs; t += stepMs) out.push(t);
     return out;
-  }, [win]);
+  }, [win, tickStepHours]);
 
-  const pos = (ms: number): number => (ms - win.startMs) * PX_PER_MS;
+  const pos = (ms: number): number => (ms - win.startMs) * pxPerMs;
 
   return (
-    <div className="grid-scroll" tabIndex={0} aria-label="Scoreboard grid by channel">
+    <div className="grid-scroll" ref={scrollRef} tabIndex={0} aria-label="Scoreboard grid by channel">
       <div className="grid-inner" style={{ minWidth: RAIL_PX + durationPx }}>
         <div className="grid-header">
           <div className="rail-space" style={{ width: RAIL_PX }} />
@@ -59,17 +86,23 @@ export default function Grid(props: Props) {
           </div>
         </div>
         <div className="grid-body">
-          <div className="grid-lines" aria-hidden="true" style={{ left: RAIL_PX, width: durationPx }}>
+          <div
+            className="grid-lines"
+            aria-hidden="true"
+            style={{ left: RAIL_PX, width: durationPx }}
+          >
             {ticks.map((t) => (
               <span key={t} className="vline" style={{ left: pos(t) }} />
             ))}
-            {hasLive && <NowLine winStart={win.startMs} winEnd={win.endMs} />}
+            {hasLive && <NowLine winStart={win.startMs} winEnd={win.endMs} pxPerMs={pxPerMs} />}
           </div>
           {groups.map((group) => (
             <ChannelRow
               key={group.channel}
               group={group}
               pos={pos}
+              pxPerMs={pxPerMs}
+              minBlockPx={minBlockPx}
               tz={tz}
               focusChannel={props.focusChannel}
               expanded={props.expandedChannels}
@@ -86,19 +119,29 @@ export default function Grid(props: Props) {
 }
 
 /** Own 1s clock — re-renders only the line, never the grid. */
-function NowLine({ winStart, winEnd }: { winStart: number; winEnd: number }) {
+function NowLine({
+  winStart,
+  winEnd,
+  pxPerMs,
+}: {
+  winStart: number;
+  winEnd: number;
+  pxPerMs: number;
+}) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
   if (now < winStart || now > winEnd) return null;
-  return <span className="now-line" style={{ left: (now - winStart) * PX_PER_MS }} />;
+  return <span className="now-line" style={{ left: (now - winStart) * pxPerMs }} />;
 }
 
 function ChannelRow({
   group,
   pos,
+  pxPerMs,
+  minBlockPx,
   tz,
   focusChannel,
   expanded,
@@ -109,6 +152,8 @@ function ChannelRow({
 }: {
   group: ChannelGroup;
   pos: (ms: number) => number;
+  pxPerMs: number;
+  minBlockPx: number;
   tz: string;
   focusChannel: string | null;
   expanded: Set<string>;
@@ -151,6 +196,8 @@ function ChannelRow({
                 key={block.game.id}
                 block={block}
                 pos={pos}
+                pxPerMs={pxPerMs}
+                minBlockPx={minBlockPx}
                 tz={tz}
                 onSelectGame={onSelectGame}
                 selected={selectedGameId === block.game.id}
@@ -175,18 +222,22 @@ function ChannelRow({
 function GameBlock({
   block,
   pos,
+  pxPerMs,
+  minBlockPx,
   tz,
   onSelectGame,
   selected,
 }: {
   block: Block;
   pos: (ms: number) => number;
+  pxPerMs: number;
+  minBlockPx: number;
   tz: string;
   onSelectGame: (id: string) => void;
   selected: boolean;
 }) {
   const g = block.game;
-  const width = Math.max((block.endMs - block.startMs) * PX_PER_MS, MIN_BLOCK_PX);
+  const width = Math.max((block.endMs - block.startMs) * pxPerMs, minBlockPx);
   const live = g.phase === "in";
   const ppd =
     g.statusKind === "postponed" ? "PPD" : g.statusKind === "canceled" ? "CNCL" : null;

@@ -83,6 +83,36 @@ describe("applyFilters", () => {
     expect(out).toEqual([rankedOnly, unrankedBig12]);
   });
 
+  it("maps SEC to its verified conferenceId (8) — regression for the wrong-id bug", () => {
+    const secGame = gameOf(
+      makeEvent({
+        id: "401900010",
+        competitors: [
+          competitor({
+            id: "333",
+            abbr: "ECU",
+            name: "East Carolina Pirates",
+            color: "4B2170",
+            conferenceId: "151",
+            homeAway: "away",
+          }),
+          competitor({
+            id: "333",
+            abbr: "ALA",
+            name: "Alabama Crimson Tide",
+            color: "96001A",
+            conferenceId: "8", // SEC — verified by probe, NOT 7
+            homeAway: "home",
+            rank: 13,
+          }),
+        ],
+      }),
+    );
+    expect(secGame.home.conference).toBe("SEC");
+    const out = applyFilters([secGame], { ...NO_FILTERS, conferences: ["SEC"] });
+    expect(out).toHaveLength(1);
+  });
+
   it("televised only restricts the additive selection without shrinking it to AND", () => {
     const rankedStreamOnly = gameOf(
       makeEvent({ broadcasts: [{ market: "national", names: ["ACCNX"] }] }),

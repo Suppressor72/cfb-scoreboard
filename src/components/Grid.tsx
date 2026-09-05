@@ -262,6 +262,16 @@ function GameBlock({
           ? g.statusDetail || "Final/OT"
           : "Final";
 
+  // Quarter-by-quarter columns (1 2 3 4 [OT…] T), shown once play begins.
+  // Canceled/postponed games never have linescores, so they skip the table.
+  const periodCount = Math.max(
+    4,
+    g.home.linescores?.length ?? 0,
+    g.away.linescores?.length ?? 0,
+  );
+  const showLinescore =
+    g.phase === "in" || !!(g.home.linescores?.length || g.away.linescores?.length);
+
   return (
     <button
       type="button"
@@ -286,6 +296,24 @@ function GameBlock({
       <span className={`block-team${g.phase === "post" && g.home.winner ? " won" : ""}`}>
         <TeamLine team={g.home} />
       </span>
+      {showLinescore && (
+        <span className="block-linescore">
+          <span className="ls-row ls-head">
+            {Array.from({ length: periodCount }, (_, i) => (
+              <span key={i}>{i < 4 ? i + 1 : i === 4 ? "OT" : `${i - 3}OT`}</span>
+            ))}
+            <span className="ls-total">T</span>
+          </span>
+          {[g.away, g.home].map((t) => (
+            <span key={t.id} className={`ls-row${t.winner ? " won" : ""}`}>
+              {Array.from({ length: periodCount }, (_, i) => (
+                <span key={i}>{t.linescores?.[i] ?? ""}</span>
+              ))}
+              <span className="ls-total">{t.score ?? ""}</span>
+            </span>
+          ))}
+        </span>
+      )}
     </button>
   );
 }
@@ -293,14 +321,11 @@ function GameBlock({
 function TeamLine({ team }: { team: Game["home"] }) {
   const meta = teamMeta(team);
   return (
-    <>
-      <span className="team-name">
-        <TeamLogo team={team} size={16} />
-        {team.abbreviation}
-        {team.rank !== undefined && <span className="rank">#{team.rank}</span>}
-        {meta && <span className="team-meta">{meta}</span>}
-      </span>
-      {team.score !== undefined && <span className="score">{team.score}</span>}
-    </>
+    <span className="team-name">
+      <TeamLogo team={team} size={16} />
+      {team.abbreviation}
+      {team.rank !== undefined && <span className="rank">#{team.rank}</span>}
+      {meta && <span className="team-meta">{meta}</span>}
+    </span>
   );
 }

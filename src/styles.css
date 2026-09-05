@@ -390,15 +390,14 @@ body {
   gap: 4px;
   min-width: 0;
   flex: 1 1 auto;
-  overflow: hidden;
+  /* meta may slide under the linescore overlay; the overlay masks it */
+  overflow: visible;
 }
 .team-meta {
   font-size: 0.66rem;
   font-weight: 400;
   opacity: 0.8;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .team-logo {
   object-fit: contain;
@@ -412,6 +411,8 @@ body {
   font-size: 0.78rem;
   font-weight: 600;
   white-space: nowrap;
+  height: 16px;
+  line-height: 16px;
 }
 .block-team .score {
   font-weight: 800;
@@ -424,9 +425,52 @@ body {
   font-size: 0.7rem;
 }
 .block-status {
+  height: 16px;
+  line-height: 16px;
+  display: flex;
+  align-items: center;
   font-size: 0.68rem;
   opacity: 0.85;
   white-space: nowrap;
+}
+/* Quarter-by-quarter columns: right-justified, floated over team meta text.
+   background:inherit repaints the block's tint so the numbers mask anything
+   they overlap. */
+.block-linescore {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  right: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: inherit;
+  padding: 2px 3px;
+  border-radius: 4px;
+}
+.ls-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 3px;
+  height: 16px;
+  line-height: 16px;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+.ls-row > span {
+  width: 11px;
+  text-align: center;
+}
+.ls-row .ls-total {
+  width: 17px;
+  font-weight: 800;
+}
+.ls-head {
+  font-size: 0.64rem;
+  opacity: 0.75;
+}
+.ls-row.won .ls-total {
+  color: var(--ok);
 }
 .game-block.ppd {
   background: repeating-linear-gradient(

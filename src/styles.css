@@ -1,5 +1,9 @@
 /* Dark broadcast-graphics theme; team brand colors carry the palette. */
 :root {
+  /* UI scale: fonts (rem) and geometry (calc) grow together on large screens.
+     The grid reads the same value in JS (src/lib/uiScale.ts) so its
+     computed dimensions stay consistent with the CSS. */
+  --s: 1;
   --bg: #0e1116;
   --panel: #161b23;
   --panel-2: #1c232e;
@@ -9,11 +13,24 @@
   --accent: #4da3ff;
   --live: #ff5d5d;
   --ok: #3ddc84;
-  --rail-w: 92px;
+}
+@media (min-width: 1440px) and (max-width: 1919px) {
+  :root {
+    --s: 1.2;
+  }
+}
+@media (min-width: 1920px) {
+  :root {
+    --s: 1.5;
+  }
 }
 
 * {
   box-sizing: border-box;
+}
+
+html {
+  font-size: calc(16px * var(--s));
 }
 
 html,
@@ -23,11 +40,14 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-  font-size: 15px;
+}
+
+body {
+  font-size: 0.95rem;
 }
 
 .app {
-  max-width: 1280px;
+  max-width: calc(1600px * var(--s));
   margin: 0 auto;
   padding: 12px 16px 48px;
 }
@@ -258,7 +278,7 @@ body {
 }
 .axis {
   position: relative;
-  height: 30px;
+  height: calc(30px * var(--s));
 }
 .tick {
   position: absolute;
@@ -318,10 +338,10 @@ body {
   font-weight: 700;
   font-size: 0.8rem;
   cursor: pointer;
-  padding: 4px 6px;
+  padding: calc(4px * var(--s)) calc(6px * var(--s));
   text-align: center;
   align-self: stretch;
-  min-height: 64px;
+  min-height: calc(64px * var(--s));
 }
 .channel-rail.focused {
   color: var(--accent);
@@ -356,15 +376,15 @@ body {
 /* Game blocks: neutral panel + team-color border and subtle tint */
 .game-block {
   position: absolute;
-  top: 3px;
-  height: 58px;
-  border: 2px solid var(--line);
-  border-radius: 6px;
+  top: calc(3px * var(--s));
+  height: calc(58px * var(--s));
+  border: calc(2px * var(--s)) solid var(--line);
+  border-radius: calc(6px * var(--s));
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 1px;
-  padding: 2px 7px;
+  gap: calc(1px * var(--s));
+  padding: calc(2px * var(--s)) calc(7px * var(--s));
   background-color: var(--panel-2);
   color: var(--text);
   text-align: left;
@@ -407,12 +427,12 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 6px;
+  gap: calc(6px * var(--s));
   font-size: 0.78rem;
   font-weight: 600;
   white-space: nowrap;
-  height: 16px;
-  line-height: 16px;
+  height: calc(16px * var(--s));
+  line-height: calc(16px * var(--s));
 }
 .block-team .score {
   font-weight: 800;
@@ -425,8 +445,8 @@ body {
   font-size: 0.7rem;
 }
 .block-status {
-  height: 16px;
-  line-height: 16px;
+  height: calc(16px * var(--s));
+  line-height: calc(16px * var(--s));
   display: flex;
   align-items: center;
   font-size: 0.68rem;
@@ -440,29 +460,29 @@ body {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  right: 6px;
+  right: calc(6px * var(--s));
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: calc(1px * var(--s));
   background: inherit;
-  padding: 2px 3px;
-  border-radius: 4px;
+  padding: calc(2px * var(--s)) calc(3px * var(--s));
+  border-radius: calc(4px * var(--s));
 }
 .ls-row {
   display: flex;
   justify-content: flex-end;
-  gap: 3px;
-  height: 16px;
-  line-height: 16px;
+  gap: calc(3px * var(--s));
+  height: calc(16px * var(--s));
+  line-height: calc(16px * var(--s));
   font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
 }
 .ls-row > span {
-  width: 11px;
+  width: calc(11px * var(--s));
   text-align: center;
 }
 .ls-row .ls-total {
-  width: 17px;
+  width: calc(17px * var(--s));
   font-weight: 800;
 }
 .ls-head {

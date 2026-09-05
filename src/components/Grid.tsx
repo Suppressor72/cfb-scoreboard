@@ -3,6 +3,7 @@ import type { Game } from "../api/types";
 import { normalizeHex, teamTint } from "../lib/color";
 import { teamMeta } from "../lib/display";
 import { formatTime } from "../lib/dates";
+import { uiScale } from "../lib/uiScale";
 import type { Block, ChannelGroup } from "../selectors/lanes";
 import { groupByChannel, timeWindow } from "../selectors/lanes";
 import TeamLogo from "./TeamLogo";
@@ -34,11 +35,16 @@ export default function Grid(props: Props) {
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
+  const [scale, setScale] = useState(() => uiScale());
   useEffect(() => {
     const el = scrollRef.current;
     if (!el || typeof ResizeObserver === "undefined") return;
     const ro = new ResizeObserver((entries) => {
-      for (const entry of entries) setContainerWidth(entry.contentRect.width);
+      // Viewport changes can flip the CSS --s media query; recompute both
+      for (const entry of entries) {
+        setScale(uiScale());
+        setContainerWidth(entry.contentRect.width);
+      }
     });
     ro.observe(el);
     return () => ro.disconnect();
@@ -49,16 +55,22 @@ export default function Grid(props: Props) {
   const win = useMemo(() => timeWindow(groups), [groups]);
   const durationMs = Math.max(win.endMs - win.startMs, 3_600_000);
 
+  // All geometry in scaled pixels so JS dimensions match the scaled CSS
+  const railPx = RAIL_PX * scale;
   const pxPerMs =
-    containerWidth > RAIL_PX + 100
-      ? Math.max(MIN_PX_PER_MS, (containerWidth - RAIL_PX - 8) / durationMs)
-      : FALLBACK_PX_PER_MS;
+    containerWidth > railPx + 100 * scale
+      ? Math.max(
+          MIN_PX_PER_MS * scale,
+          (containerWidth - railPx - 8 * scale) / durationMs,
+        )
+      : FALLBACK_PX_PER_MS * scale;
   const durationPx = durationMs * pxPerMs;
   const hourPx = pxPerMs * 3_600_000;
-  const minBlockPx = Math.max(56, Math.min(165, hourPx * 1.3));
+  const minBlockPx = Math.max(56, Math.min(165, hourPx * 1.3)) * scale;
   const hasLive = games.some((g) => g.phase === "in");
 
-  const tickStepHours = hourPx >= 55 ? 1 : hourPx >= 28 ? 2 : 4;
+  const tickStepHours =
+    hourPx >= 55 * scale ? 1 : hourPx >= 28 * scale ? 2 : 4;
   const ticks = useMemo(() => {
     const stepMs = tickStepHours * 3_600_000;
     const out: number[] = [];
@@ -71,9 +83,9 @@ export default function Grid(props: Props) {
 
   return (
     <div className="grid-scroll" ref={scrollRef} tabIndex={0} aria-label="Scoreboard grid by channel">
-      <div className="grid-inner" style={{ minWidth: RAIL_PX + durationPx }}>
+      <div className="grid-inner" style={{ minWidth: railPx + durationPx }}>
         <div className="grid-header">
-          <div className="rail-space" style={{ width: RAIL_PX }} />
+          <div className="rail-space" style={{ width: railPx }} />
           <div className="axis" style={{ width: durationPx }}>
             {ticks.map((t) => (
               <span key={t} className="tick" style={{ left: pos(t) }}>
@@ -86,7 +98,7 @@ export default function Grid(props: Props) {
           <div
             className="grid-lines"
             aria-hidden="true"
-            style={{ left: RAIL_PX, width: durationPx }}
+            style={{ left: railPx, width: durationPx }}
           >
             {ticks.map((t) => (
               <span key={t} className="vline" style={{ left: pos(t) }} />
@@ -100,6 +112,9 @@ export default function Grid(props: Props) {
               pos={pos}
               pxPerMs={pxPerMs}
               minBlockPx={minBlockPx}
+              railPx={railPx}
+              lanePx={LANE_PX * scale}
+              logoSize={16 * scale}
               tz={tz}
               focusChannel={props.focusChannel}
               expanded={props.expandedChannels}
@@ -139,6 +154,9 @@ function ChannelRow({
   pos,
   pxPerMs,
   minBlockPx,
+  railPx,
+  lanePx,
+  logoSize,
   tz,
   focusChannel,
   expanded,
@@ -151,6 +169,9 @@ function ChannelRow({
   pos: (ms: number) => number;
   pxPerMs: number;
   minBlockPx: number;
+  railPx: number;
+  lanePx: number;
+  logoSize: number;
   tz: string;
   focusChannel: string | null;
   expanded: Set<string>;
@@ -178,7 +199,7 @@ function ChannelRow({
       <button
         type="button"
         className={`channel-rail${focused ? " focused" : ""}`}
-        style={{ width: RAIL_PX }}
+        style={{ width: railPx }}
         aria-pressed={focused}
         title={focused ? "Clear channel focus" : "Focus this channel"}
         onClick={() => onToggleChannel(focused ? null : group.channel)}
@@ -187,7 +208,7 @@ function ChannelRow({
       </button>
       <div className="channel-lanes">
         {lanes.map((lane, i) => (
-          <div className="lane" key={i} style={{ height: LANE_PX }}>
+          <div className="lane" key={i} style={{ height: lanePx }}>
             {lane.map((block) => (
               <GameBlock
                 key={block.game.id}
@@ -195,6 +216,7 @@ function ChannelRow({
                 pos={pos}
                 pxPerMs={pxPerMs}
                 minBlockPx={minBlockPx}
+                logoSize={logoSize}
                 tz={tz}
                 onSelectGame={onSelectGame}
                 selected={selectedGameId === block.game.id}
@@ -221,6 +243,7 @@ function GameBlock({
   pos,
   pxPerMs,
   minBlockPx,
+  logoSize,
   tz,
   onSelectGame,
   selected,
@@ -229,6 +252,7 @@ function GameBlock({
   pos: (ms: number) => number;
   pxPerMs: number;
   minBlockPx: number;
+  logoSize: number;
   tz: string;
   onSelectGame: (id: string) => void;
   selected: boolean;
@@ -291,10 +315,10 @@ function GameBlock({
         {g.availability === "unknown" && g.phase === "pre" ? " · TV?" : ""}
       </span>
       <span className={`block-team${g.phase === "post" && g.away.winner ? " won" : ""}`}>
-        <TeamLine team={g.away} />
+        <TeamLine team={g.away} logoSize={logoSize} />
       </span>
       <span className={`block-team${g.phase === "post" && g.home.winner ? " won" : ""}`}>
-        <TeamLine team={g.home} />
+        <TeamLine team={g.home} logoSize={logoSize} />
       </span>
       {showLinescore && (
         <span className="block-linescore">
@@ -318,11 +342,11 @@ function GameBlock({
   );
 }
 
-function TeamLine({ team }: { team: Game["home"] }) {
+function TeamLine({ team, logoSize }: { team: Game["home"]; logoSize: number }) {
   const meta = teamMeta(team);
   return (
     <span className="team-name">
-      <TeamLogo team={team} size={16} />
+      <TeamLogo team={team} size={logoSize} />
       {team.abbreviation}
       {team.rank !== undefined && <span className="rank">#{team.rank}</span>}
       {meta && <span className="team-meta">{meta}</span>}

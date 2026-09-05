@@ -2,6 +2,7 @@ import { useEffect, useRef, type ReactNode } from "react";
 import type { Game, TeamResult } from "../api/types";
 import { formatTime } from "../lib/dates";
 import { teamMeta } from "../lib/display";
+import { uiScale } from "../lib/uiScale";
 import TeamLogo from "./TeamLogo";
 
 /**
@@ -30,7 +31,7 @@ function Linescore({ game }: { game: Game }) {
     <tr key={t.id}>
       <th scope="row">
         <span className="details-team">
-          <TeamLogo team={t} size={22} />
+          <TeamLogo team={t} size={22 * uiScale()} />
           <span className="details-team-name">
             {t.name}
             <span className="record"> {teamMeta(t) ?? ""}</span>

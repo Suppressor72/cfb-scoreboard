@@ -322,7 +322,8 @@ function RefreshStatus({
 }) {
   const [, forceTick] = useState(0);
   useEffect(() => {
-    const t = setInterval(() => forceTick((n) => n + 1), 30_000);
+    // Tick every second so the "updated Xs ago" counter actually counts
+    const t = setInterval(() => forceTick((n) => n + 1), 1_000);
     return () => clearInterval(t);
   }, []);
 

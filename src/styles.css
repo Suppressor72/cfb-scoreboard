@@ -580,6 +580,24 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  text-align: left;
+  font-weight: 600;
+}
+.details-team .record {
+  color: var(--muted);
+  font-weight: 400;
+}
+.period-cell {
+  text-align: center;
+  min-width: 26px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+thead .period-cell,
+thead .score-cell {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-weight: 600;
 }
 .score-cell {
   text-align: right;

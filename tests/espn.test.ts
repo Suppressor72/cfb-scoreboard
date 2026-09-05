@@ -8,6 +8,7 @@ import {
 import {
   canceledEvent,
   finalEvent,
+  finalOtEvent,
   liveEvent,
   makeEnvelope,
   makeEvent,
@@ -60,13 +61,22 @@ describe("normalizeEvent", () => {
     expect(g.gamecastUrl).toMatch(/^https:\/\/www\.espn\.com\//);
   });
 
-  it("exposes scores and status detail for live games", () => {
+  it("exposes scores and status detail for live games (string scores)", () => {
     const g = gameOf(liveEvent);
     expect(g.phase).toBe("in");
     expect(g.statusKind).toBe("live");
     expect(g.statusDetail).toBe("Q3 8:12");
-    expect(g.away.score).toBe(17);
+    expect(g.away.score).toBe(17); // parsed from the string "17" ESPN sends
     expect(g.home.score).toBe(10);
+  });
+
+  it("maps per-period linescores, including OT periods", () => {
+    const live = gameOf(liveEvent);
+    expect(live.away.linescores).toEqual([7, 10]);
+    expect(live.home.linescores).toEqual([3, 7]);
+    const ot = gameOf(finalOtEvent);
+    expect(ot.away.linescores).toEqual([10, 7, 14, 10, 3]); // 5th period = OT
+    expect(ot.away.linescores?.reduce((a, b) => a + b, 0)).toBe(ot.away.score);
   });
 
   it("keeps winners on final games", () => {

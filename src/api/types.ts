@@ -37,6 +37,8 @@ export interface TeamResult {
   conference?: string; // normalized name; absent = unknown
   /** Defined only when phase !== "pre" — ESPN sends literal 0 pre-game. */
   score?: number;
+  /** Points per completed period (Q1–Q4, then OTs). ESPN sends strings. */
+  linescores?: number[];
   /** Only when final; never on canceled/postponed. */
   winner?: boolean;
 }

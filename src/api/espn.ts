@@ -108,6 +108,32 @@ function num(v: unknown): number | undefined {
   return typeof v === "number" && Number.isFinite(v) ? v : undefined;
 }
 
+/**
+ * ESPN sends scores as strings ("17") once games are live; accept both.
+ * Pre-game zeros are filtered out by the caller's phase check.
+ */
+function scoreOf(v: unknown): number | undefined {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string" && v.trim() !== "" && Number.isFinite(Number(v))) {
+    return Number(v);
+  }
+  return undefined;
+}
+
+/** Per-period points from `linescores: [{ value }]`, completed periods only. */
+function linescoresOf(competitor: Record<string, unknown>): number[] | undefined {
+  const entries = arr(competitor.linescores);
+  if (!entries) return undefined;
+  const out: number[] = [];
+  for (const entry of entries) {
+    if (!isRecord(entry)) continue;
+    const v = scoreOf(entry.value);
+    if (v === undefined) continue;
+    out.push(v);
+  }
+  return out.length > 0 ? out : undefined;
+}
+
 function arr(v: unknown): unknown[] | null {
   return Array.isArray(v) ? v : null;
 }
@@ -188,8 +214,10 @@ function normalizeTeam(
     rank: rankRaw !== undefined && rankRaw >= 1 && rankRaw <= 25 ? rankRaw : undefined,
     record: isRecord(recordOverall) ? str(recordOverall.summary) : undefined,
     conference: CONFERENCE_BY_ID[str(team.conferenceId) ?? ""] ?? undefined,
-    // ESPN sends literal 0 pre-game — never expose it (docs/DATA.md)
-    score: phase === "pre" ? undefined : num(competitor.score),
+    // ESPN sends literal 0 pre-game — never expose it (docs/DATA.md);
+    // live/final scores arrive as strings and scoreOf accepts both
+    score: phase === "pre" ? undefined : scoreOf(competitor.score),
+    linescores: phase === "pre" ? undefined : linescoresOf(competitor),
     winner:
       competitor.winner === true &&
       phase === "post" &&

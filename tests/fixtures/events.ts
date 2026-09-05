@@ -88,6 +88,8 @@ export function competitor(opts: {
   score?: number | string;
   winner?: boolean;
   record?: string;
+  /** Points per completed period — ESPN shape: [{value, displayValue}] */
+  linescores?: number[];
 }) {
   return {
     id: opts.id,
@@ -98,6 +100,7 @@ export function competitor(opts: {
     records: opts.record
       ? [{ name: "overall", type: "total", summary: opts.record }]
       : undefined,
+    linescores: opts.linescores?.map((v) => ({ value: v, displayValue: String(v) })),
     team: {
       id: opts.id,
       displayName: opts.name,
@@ -206,11 +209,13 @@ export const liveEvent = makeEvent({
   competitors: [
     competitor({
       id: "130", abbr: "MICH", name: "Michigan Wolverines", color: "00274C",
-      conferenceId: "5", homeAway: "away", rank: 4, score: 17,
+      conferenceId: "5", homeAway: "away", rank: 4, score: "17",
+      linescores: [7, 10],
     }),
     competitor({
       id: "194", abbr: "WISC", name: "Wisconsin Badgers", color: "c5050c",
-      conferenceId: "5", homeAway: "home", score: 10,
+      conferenceId: "5", homeAway: "home", score: "10",
+      linescores: [3, 7],
     }),
   ],
 });
@@ -221,8 +226,8 @@ export const finalEvent = makeEvent({
   status: "final",
   broadcasts: [{ market: "national", names: ["FOX"] }],
   competitors: [
-    competitor({ id: "111", abbr: "PSU", name: "Penn State Nittany Lions", color: "093161", conferenceId: "5", homeAway: "away", rank: 7, score: 31, winner: true, record: "2-0" }),
-    competitor({ id: "112", abbr: "IOWA", name: "Iowa Hawkeyes", color: "FFCD00", conferenceId: "5", homeAway: "home", score: 14, record: "1-1" }),
+    competitor({ id: "111", abbr: "PSU", name: "Penn State Nittany Lions", color: "093161", conferenceId: "5", homeAway: "away", rank: 7, score: "31", winner: true, record: "2-0", linescores: [7, 14, 3, 7] }),
+    competitor({ id: "112", abbr: "IOWA", name: "Iowa Hawkeyes", color: "FFCD00", conferenceId: "5", homeAway: "home", score: "14", record: "1-1", linescores: [0, 7, 0, 7] }),
   ],
 });
 
@@ -232,8 +237,8 @@ export const finalOtEvent = makeEvent({
   status: "final_ot",
   broadcasts: [{ market: "national", names: ["Peacock"] }],
   competitors: [
-    competitor({ id: "211", abbr: "HAW", name: "Hawaii Warriors", color: "024E63", conferenceId: "17", homeAway: "away", score: 44, winner: true }),
-    competitor({ id: "212", abbr: "UNLV", name: "UNLV Rebels", color: "8b0303", conferenceId: "17", homeAway: "home", score: 41 }),
+    competitor({ id: "211", abbr: "HAW", name: "Hawaii Warriors", color: "024E63", conferenceId: "17", homeAway: "away", score: "44", winner: true, linescores: [10, 7, 14, 10, 3] }),
+    competitor({ id: "212", abbr: "UNLV", name: "UNLV Rebels", color: "8b0303", conferenceId: "17", homeAway: "home", score: "41", linescores: [3, 14, 7, 10, 7] }),
   ],
 });
 
@@ -242,8 +247,8 @@ export const streamOnlyEvent = makeEvent({
   date: "2026-09-12T22:00Z",
   broadcasts: [{ market: "national", names: ["ACCNX"] }],
   competitors: [
-    competitor({ id: "301", abbr: "DUKE", name: "Duke Blue Devils", color: "012169", conferenceId: "1", homeAway: "away", score: 21 }),
-    competitor({ id: "302", abbr: "UL", name: "Louisiana Ragin Cajuns", color: "BA0C2F", conferenceId: "37", homeAway: "home", score: 28, winner: true }),
+    competitor({ id: "301", abbr: "DUKE", name: "Duke Blue Devils", color: "012169", conferenceId: "1", homeAway: "away", score: "21", linescores: [7, 0, 7, 7] }),
+    competitor({ id: "302", abbr: "UL", name: "Louisiana Ragin Cajuns", color: "BA0C2F", conferenceId: "37", homeAway: "home", score: "28", winner: true, linescores: [7, 14, 0, 7] }),
   ],
   status: "final",
 });

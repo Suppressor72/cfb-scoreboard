@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react";
-import type { Game } from "../api/types";
+import { useEffect, useRef, type ReactNode } from "react";
+import type { Game, TeamResult } from "../api/types";
 import { formatTime } from "../lib/dates";
 import TeamLogo from "./TeamLogo";
 
@@ -7,6 +7,72 @@ import TeamLogo from "./TeamLogo";
  * Non-modal game details. Escape closes; focus starts on the close button
  * and returns to it (the grid button keeps its own focus on reopen).
  */
+
+/**
+ * ESPN-style linescore: one row per team with points by quarter (OT columns
+ * when they exist) and the total on the right. Falls back to a simple
+ * two-line total when no per-period data exists (e.g. pre-game).
+ */
+function Linescore({ game }: { game: Game }) {
+  const { away, home } = game;
+  const hasPeriods = !!(away.linescores?.length || home.linescores?.length);
+  const periodCount = hasPeriods
+    ? Math.max(away.linescores?.length ?? 0, home.linescores?.length ?? 0)
+    : 0;
+
+  const periodLabel = (i: number): string => {
+    if (i < 4) return String(i + 1);
+    return i === 4 ? "OT" : `${i - 3}OT`;
+  };
+
+  const teamRow = (t: TeamResult): ReactNode => (
+    <tr key={t.id}>
+      <th scope="row">
+        <span className="details-team">
+          <TeamLogo team={t} size={22} />
+          <span className="details-team-name">
+            {t.name}
+            {t.record ? <span className="record"> ({t.record})</span> : null}
+          </span>
+          {t.rank !== undefined ? <span className="rank">#{t.rank}</span> : null}
+        </span>
+      </th>
+      {hasPeriods &&
+        Array.from({ length: periodCount }, (_, i) => (
+          <td key={i} className="period-cell">
+            {t.linescores?.[i] ?? ""}
+          </td>
+        ))}
+      <td className="score-cell">
+        {t.score !== undefined ? t.score : game.phase === "pre" ? "–" : ""}
+        {t.winner ? " ✔" : ""}
+      </td>
+    </tr>
+  );
+
+  return (
+    <table className="details-table">
+      {hasPeriods && (
+        <thead>
+          <tr>
+            <th scope="col" aria-label="Team" />
+            {Array.from({ length: periodCount }, (_, i) => (
+              <th key={i} scope="col" className="period-cell">
+                {periodLabel(i)}
+              </th>
+            ))}
+            <th scope="col" className="score-cell">
+              T
+            </th>
+          </tr>
+        </thead>
+      )}
+      <tbody>
+        {[away, home].map(teamRow)}
+      </tbody>
+    </table>
+  );
+}
 export default function GameDetails({
   game,
   tz,
@@ -43,26 +109,7 @@ export default function GameDetails({
         <h2>
           {game.away.name} at {game.home.name}
         </h2>
-        <table className="details-table">
-          <tbody>
-            {[game.away, game.home].map((t) => (
-              <tr key={t.id}>
-                <td>
-                  <span className="details-team">
-                    <TeamLogo team={t} size={22} />
-                    {t.name}
-                    {t.rank !== undefined ? ` #${t.rank}` : ""}
-                    {t.record ? ` (${t.record})` : ""}
-                  </span>
-                </td>
-                <td className="score-cell">
-                  {t.score !== undefined ? t.score : game.phase === "pre" ? "–" : ""}
-                  {t.winner ? " ✔" : ""}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <Linescore game={game} />
         <p>
           {game.timeTbd
             ? "Kickoff time TBA"

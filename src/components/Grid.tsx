@@ -294,8 +294,8 @@ function TeamLine({ team }: { team: Game["home"] }) {
     <>
       <span className="team-name">
         <TeamLogo team={team} size={16} />
-        {team.rank !== undefined && <span className="rank">#{team.rank}</span>}{" "}
         {team.abbreviation}
+        {team.rank !== undefined && <span className="rank">#{team.rank}</span>}
       </span>
       {team.score !== undefined && <span className="score">{team.score}</span>}
     </>

@@ -50,8 +50,8 @@ export default function GameDetails({
                 <td>
                   <span className="details-team">
                     <TeamLogo team={t} size={22} />
-                    {t.rank !== undefined && `#${t.rank} `}
                     {t.name}
+                    {t.rank !== undefined ? ` #${t.rank}` : ""}
                     {t.record ? ` (${t.record})` : ""}
                   </span>
                 </td>

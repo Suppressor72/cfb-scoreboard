@@ -91,7 +91,7 @@ estimate**:
 
 ### Block contents
 
-- Team abbreviations with rank prefix (`#4 MICH`), brand-color background
+- Team abbreviations with rank suffix (`MICH #4`, `OSU`), brand-color border
   (leading team's color live/home team pre-game; computed contrast, neutral
   fallback when brand color fails WCAG AA), scores per team when defined,
   status line: kickoff time (pre), quarter+clock or "HALF" (live), "Final"

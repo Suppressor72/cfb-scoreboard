@@ -76,8 +76,8 @@ function MobileTeam({ team }: { team: Game["away"] }) {
   return (
     <span className={`mobile-team${team.winner ? " won" : ""}`}>
       <TeamLogo team={team} size={16} />
-      {team.rank !== undefined && <span className="rank">#{team.rank}</span>}
       {team.abbreviation}
+      {team.rank !== undefined && <span className="rank">#{team.rank}</span>}
       {team.score !== undefined && <span className="score"> {team.score}</span>}
     </span>
   );

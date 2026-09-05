@@ -35,9 +35,9 @@ function Linescore({ game }: { game: Game }) {
           <TeamLogo team={t} size={22 * uiScale()} />
           <span className="details-team-name">
             {t.name}
-            <span className="record"> {teamMeta(t) ?? ""}</span>
+            {t.rank !== undefined ? <span className="rank"> #{t.rank}</span> : null}
+            {teamMeta(t) ? <span className="record"> {teamMeta(t)}</span> : null}
           </span>
-          {t.rank !== undefined ? <span className="rank">#{t.rank}</span> : null}
         </span>
       </th>
       {hasPeriods &&

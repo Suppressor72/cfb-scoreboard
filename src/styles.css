@@ -630,8 +630,12 @@ body {
   border-top: 1px solid var(--line);
   padding: 7px 4px;
 }
+.details-table tbody th {
+  text-align: left;
+  font-weight: 400;
+}
 .details-team {
-  display: inline-flex;
+  display: flex; /* block-level: fills the <th>, so the team stays left-justified */
   align-items: center;
   gap: 8px;
   text-align: left;

@@ -25,29 +25,27 @@ interface Props {
 }
 
 /**
- * TV-guide grid. The horizontal scale keeps a square time aspect — one hour
- * across equals one lane height — compressing below that only when the day
- * would overflow the container (floor: ~43px/hour, then it scrolls).
+ * TV-guide grid. The horizontal scale keeps a fixed time aspect — one hour
+ * across equals 1.25× one lane height — compressing below that only when
+ * the day would overflow the container (floor: ~43px/hour, then it scrolls).
  */
 export default function Grid(props: Props) {
   const { games, tz } = props;
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState(0);
-  const [scale, setScale] = useState(() => uiScale());
+  // The observer only triggers re-renders; the width is read synchronously
+  // from the element at render time so it can never go stale.
+  const [resizeTick, setResizeTick] = useState(0);
   useEffect(() => {
     const el = scrollRef.current;
     if (!el || typeof ResizeObserver === "undefined") return;
-    const ro = new ResizeObserver((entries) => {
-      // Viewport changes can flip the CSS --s media query; recompute both
-      for (const entry of entries) {
-        setScale(uiScale());
-        setContainerWidth(entry.contentRect.width);
-      }
+    const ro = new ResizeObserver(() => {
+      setResizeTick((t) => t + 1);
     });
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+  void resizeTick;
 
   // Lane geometry is a pure function of the schedule — no time clock needed
   const groups = useMemo(() => groupByChannel(games), [games]);
@@ -55,12 +53,15 @@ export default function Grid(props: Props) {
   const durationMs = Math.max(win.endMs - win.startMs, 3_600_000);
 
   // All geometry in scaled pixels so JS dimensions match the scaled CSS.
-  // Square time aspect: one hour across equals one lane height. The day
+  // Time aspect: one hour across = 1.25× one lane height. The day
   // compresses below that only when it would overflow the container, down
   // to a readability floor below which horizontal scrolling returns.
+  // Scale and width are read at render time (resize observer re-renders).
+  const scale = uiScale();
   const railPx = RAIL_PX * scale;
   const lanePx = LANE_PX * scale;
-  const aspectPxPerMs = lanePx / 3_600_000;
+  const aspectPxPerMs = (lanePx * 1.25) / 3_600_000;
+  const containerWidth = scrollRef.current?.clientWidth ?? 0;
   const fitPxPerMs =
     containerWidth > railPx + 100 * scale
       ? (containerWidth - railPx - 8 * scale) / durationMs

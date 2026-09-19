@@ -105,15 +105,11 @@ out["date_boundary"] = {
     ],
 }
 
-# range query coverage vs individual dates
-_, rng = get(f"{BASE}?dates=20260903-20260907&limit=400")
-rng_ids = {ev["id"] for ev in rng["events"]}
-part_ids = ids5 | ids6
-out["range_query"] = {
-    "range_count": len(rng_ids),
-    "union_5_6_count": len(part_ids),
-    "in_union_missing_from_range": sorted(part_ids - rng_ids),
-    "range_utc_span": [min(ev["date"] for ev in rng["events"]), max(ev["date"] for ev in rng["events"])],
-}
+# multi-day query behavior (ESPN started 400ing ranges ~2026-09-19)
+try:
+    _, rng = get(f"{BASE}?dates=20260903-20260907&limit=400")
+    out["range_query"] = {"status": "200 (ranges work again)", "count": len(rng["events"])}
+except Exception as ex:
+    out["range_query"] = {"status": f"rejected: {ex}"}
 
 print(json.dumps(out, indent=1)[:9000])

@@ -25,9 +25,13 @@ are observed, not assumed:
 - **No truncation on busy days.** Saturday 2026-09-12 returned 80 events with
   the default limit; `limit=400` returned the same 80. We still pass
   `limit=300` on range queries as cheap insurance.
-- **Range queries work.** `dates=20260903-20260907` returned a superset of the
-  individual-date queries for those dates (zero events missing, zero overlap).
-  One range request per week window is enough.
+- **Multi-day queries are REJECTED (re-verified 2026-09-19).** ESPN now
+  returns HTTP 400 for every `dates=A-B` range and comma list — only single
+  `dates=YYYYMMDD` requests succeed. (Ranges worked when first probed on
+  2026-09-05; the API changed in between. Lesson: this endpoint shifts under
+  us — re-run `scripts/probe_espn.py` when fetches start failing.) The app
+  now fetches the week as nine single-date requests (window ± 1 day) at
+  concurrency 3 and merges/dedupes events by id.
 - **Date bucketing is US-Eastern-ish.** A query for `20260905` includes games
   kicking off as late as `2026-09-06T02:30Z` (7:30pm PT Saturday) and has zero
   ID overlap with `20260906` (whose earliest game is 20:00Z Sunday). So a game

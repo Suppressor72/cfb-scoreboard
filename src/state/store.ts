@@ -6,10 +6,10 @@
 import type { Snapshot } from "../api/types";
 import {
   ScoreboardFetchError,
-  fetchScoreboardRange,
+  fetchScoreboardDates,
   type FetchError,
 } from "../api/espn";
-import { providerRangeForWeek, weekDays } from "../lib/dates";
+import { providerDatesForWeek, weekDays } from "../lib/dates";
 import { dayKeyOfGame } from "../selectors/grouping";
 
 export type WeekState = {
@@ -60,10 +60,10 @@ function setWeek(weekStart: string, next: WeekState): void {
   }
 }
 
-/** The default fetcher: covering range → parse → filter to local week days. */
+/** The default fetcher: covering dates → parse → filter to local week days. */
 export const defaultFetchWeek: WeekFetcher = async (weekStart, tz, signal) => {
-  const range = providerRangeForWeek(weekStart);
-  const parsed = await fetchScoreboardRange(range.start, range.end, signal);
+  const dates = providerDatesForWeek(weekStart);
+  const parsed = await fetchScoreboardDates(dates, signal);
   const days = new Set(weekDays(weekStart));
   const games = parsed.games.filter((g) => {
     const key = dayKeyOfGame(g, tz);

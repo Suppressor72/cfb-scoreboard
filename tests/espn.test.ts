@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   espnStatusKind,
-  fetchScoreboardRange,
+  fetchScoreboardDates,
   normalizeEvent,
   parseScoreboard,
 } from "../src/api/espn";
@@ -216,35 +216,68 @@ describe("parseScoreboard", () => {
   });
 });
 
-describe("fetchScoreboardRange", () => {
-  it("builds compact ESPN dates (YYYYMMDD), not dashed ISO dates", async () => {
-    let seenUrl = "";
+describe("fetchScoreboardDates", () => {
+  it("requests each date individually — ESPN 400s multi-day queries now", async () => {
+    const seenUrls: string[] = [];
     const transport = async (url: string) => {
-      seenUrl = url;
+      seenUrls.push(url);
       return { status: 200, body: makeEnvelope([]) };
     };
-    await fetchScoreboardRange("2026-09-02", "2026-09-10", undefined, transport);
-    expect(seenUrl).toContain("dates=20260902-20260910&limit=300");
+    await fetchScoreboardDates(["2026-09-02", "2026-09-03"], undefined, transport);
+    expect(seenUrls).toEqual([
+      "https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?dates=20260902&limit=300",
+      "https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?dates=20260903&limit=300",
+    ]);
+  });
+
+  it("merges dates and dedupes events by id", async () => {
+    const dupe = makeEvent({ id: "401900011" });
+    const other = makeEvent({ id: "401900012", date: "2026-09-03T01:00Z" });
+    const transport = async (url: string) => ({
+      status: 200,
+      body: makeEnvelope(url.includes("20260902") ? [dupe] : [dupe, other]),
+    });
+    const parsed = await fetchScoreboardDates(["2026-09-02", "2026-09-03"], undefined, transport);
+    expect(parsed.games.map((g) => g.id).sort()).toEqual(["401900011", "401900012"]);
+  });
+
+  it("keeps successful dates when some fail, but errors when all fail", async () => {
+    const good = makeEvent({ id: "401900013" });
+    const transport = async (url: string) =>
+      url.includes("20260902")
+        ? { status: 200, body: makeEnvelope([good]) }
+        : { status: 500, body: {} };
+    const partial = await fetchScoreboardDates(
+      ["2026-09-02", "2026-09-03"],
+      undefined,
+      transport,
+    );
+    expect(partial.games).toHaveLength(1);
+
+    const allFail = async () => ({ status: 503, body: {} });
+    await expect(
+      fetchScoreboardDates(["2026-09-02", "2026-09-03"], undefined, allFail),
+    ).rejects.toMatchObject({ type: "http", status: 503, retryable: true });
   });
 
   it("surfaces rate limits as retryable with retry-after", async () => {
     const transport = async () => ({ status: 429, body: {}, retryAfterMs: 60_000 });
     await expect(
-      fetchScoreboardRange("2026-09-11", "2026-09-19", undefined, transport),
+      fetchScoreboardDates(["2026-09-11"], undefined, transport),
     ).rejects.toMatchObject({ type: "http", status: 429, retryable: true, retryAfterMs: 60_000 });
   });
 
   it("treats access denial as non-retryable", async () => {
     const transport = async () => ({ status: 403, body: {} });
     await expect(
-      fetchScoreboardRange("2026-09-11", "2026-09-19", undefined, transport),
+      fetchScoreboardDates(["2026-09-11"], undefined, transport),
     ).rejects.toMatchObject({ type: "http", status: 403, retryable: false });
   });
 
   it("rejects a 200 with a bad envelope as a schema error", async () => {
     const transport = async () => ({ status: 200, body: { html: "denied" } });
     await expect(
-      fetchScoreboardRange("2026-09-11", "2026-09-19", undefined, transport),
+      fetchScoreboardDates(["2026-09-11"], undefined, transport),
     ).rejects.toMatchObject({ type: "schema", retryable: false });
   });
 });

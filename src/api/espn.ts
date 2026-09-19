@@ -407,36 +407,68 @@ export function parseScoreboard(payload: unknown): ParsedScoreboard | null {
 // ---------------------------------------------------------------------------
 
 /**
- * Fetches the provider date range covering the week window (±1 day — ESPN
- * buckets by US Eastern date; caller filters games down to local days).
- * Dates in the URL are compact YYYYMMDD, not ISO — ESPN 400s on dashed dates.
+ * Fetches the provider dates covering the week window. ESPN started
+ * rejecting multi-day date queries (HTTP 400, observed 2026-09-19), so each
+ * date is its own request; results merge and dedupe by event id.
  */
-export async function fetchScoreboardRange(
-  providerStart: string,
-  providerEnd: string,
+export async function fetchScoreboardDates(
+  dates: string[],
   signal?: AbortSignal,
   transport: Transport = fetchTransport,
 ): Promise<ParsedScoreboard> {
   const compact = (d: string): string => d.replace(/-/g, "");
-  const url = `${SCOREBOARD_URL}?dates=${compact(providerStart)}-${compact(providerEnd)}&limit=300`;
-  const res = await transport(url, { signal });
-  if (res.status !== 200) {
+  const byId = new Map<string, Game>();
+  const warnings: string[] = [];
+  let succeeded = 0;
+
+  const fetchOne = async (date: string): Promise<void> => {
+    const url = `${SCOREBOARD_URL}?dates=${compact(date)}&limit=300`;
+    const res = await transport(url, { signal });
+    if (res.status !== 200) {
+      throw new ScoreboardFetchError({
+        type: "http",
+        message: `HTTP ${res.status} from scoreboard (${date})`,
+        status: res.status,
+        retryable: res.status === 429 || res.status >= 500,
+        retryAfterMs: res.status === 429 ? res.retryAfterMs : undefined,
+      });
+    }
+    const parsed = parseScoreboard(res.body);
+    if (!parsed) {
+      throw new ScoreboardFetchError({
+        type: "schema",
+        message: `invalid scoreboard envelope (${date})`,
+        status: res.status,
+        retryable: false,
+      });
+    }
+    succeeded++;
+    for (const game of parsed.games) {
+      if (!byId.has(game.id)) byId.set(game.id, game); // adjacent-date dedupe
+    }
+    warnings.push(...parsed.warnings);
+  };
+
+  // Small chunks keep us polite to the endpoint while loading a week fast
+  const CONCURRENCY = 3;
+  let firstError: unknown;
+  for (let i = 0; i < dates.length; i += CONCURRENCY) {
+    const results = await Promise.allSettled(dates.slice(i, i + CONCURRENCY).map(fetchOne));
+    for (const r of results) {
+      if (r.status !== "rejected") continue;
+      if (r.reason instanceof DOMException && r.reason.name === "AbortError") throw r.reason;
+      if (firstError === undefined) firstError = r.reason;
+    }
+  }
+  if (succeeded === 0) {
+    if (firstError instanceof ScoreboardFetchError || firstError instanceof Error) {
+      throw firstError;
+    }
     throw new ScoreboardFetchError({
-      type: "http",
-      message: `HTTP ${res.status} from scoreboard`,
-      status: res.status,
-      retryable: res.status === 429 || res.status >= 500,
-      retryAfterMs: res.status === 429 ? res.retryAfterMs : undefined,
+      type: "network",
+      message: "all scoreboard date fetches failed",
+      retryable: true,
     });
   }
-  const parsed = parseScoreboard(res.body);
-  if (!parsed) {
-    throw new ScoreboardFetchError({
-      type: "schema",
-      message: "invalid scoreboard envelope",
-      status: res.status,
-      retryable: false,
-    });
-  }
-  return parsed;
+  return { games: [...byId.values()], warnings };
 }

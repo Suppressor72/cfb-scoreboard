@@ -96,15 +96,13 @@ export function weekDays(weekStart: string): string[] {
 }
 
 /**
- * Provider (US Eastern) date range covering the week window ± 1 day.
- * Any timezone's local week maps to ET dates within ±1 day of the same
- * window, so string arithmetic suffices — no tz math needed here.
+ * Provider (US Eastern) dates covering the week window ± 1 day. ESPN
+ * rejects multi-day date queries (observed 2026-09-19), so the app fetches
+ * each date individually and merges. Any timezone's local week maps to ET
+ * dates within ±1 day of the same window, so string arithmetic suffices.
  */
-export function providerRangeForWeek(weekStart: string): {
-  start: string;
-  end: string;
-} {
-  return { start: addDaysIso(weekStart, -1), end: addDaysIso(weekStart, 7) };
+export function providerDatesForWeek(weekStart: string): string[] {
+  return Array.from({ length: 9 }, (_, i) => addDaysIso(weekStart, i - 1));
 }
 
 export function formatTime(ms: number, tz: string): string {

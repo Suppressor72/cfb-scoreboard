@@ -4,7 +4,7 @@ import {
   isoDayDow,
   localDateInTz,
   localMidnightUtc,
-  providerRangeForWeek,
+  providerDatesForWeek,
   weekStartFor,
 } from "../src/lib/dates";
 
@@ -90,11 +90,10 @@ describe("weekStartFor (Thursday→Wednesday window)", () => {
   });
 });
 
-describe("providerRangeForWeek", () => {
-  it("pads one day either side of the window", () => {
-    expect(providerRangeForWeek("2026-09-03")).toEqual({
-      start: "2026-09-02",
-      end: "2026-09-10",
-    });
+describe("providerDatesForWeek", () => {
+  it("pads one day either side of the 7-day window", () => {
+    expect(providerDatesForWeek("2026-09-03")).toHaveLength(9);
+    expect(providerDatesForWeek("2026-09-03")[0]).toBe("2026-09-02");
+    expect(providerDatesForWeek("2026-09-03")[8]).toBe("2026-09-10");
   });
 });

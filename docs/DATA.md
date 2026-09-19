@@ -26,8 +26,11 @@ are observed, not assumed:
   the default limit; `limit=400` returned the same 80. We still pass
   `limit=300` on range queries as cheap insurance.
 - **Multi-day queries are REJECTED (re-verified 2026-09-19).** ESPN now
-  returns HTTP 400 for every `dates=A-B` range and comma list — only single
-  `dates=YYYYMMDD` requests succeed. (Ranges worked when first probed on
+  returns HTTP 400 for every `dates=A-B` range (even 2-day), comma list, and
+  semicolon list. The repeated-parameter form `?dates=A&dates=B` returns
+  HTTP 200 but **silently serves only the first date's games** — do not use
+  it; it looks like multi-day support while dropping data. Only single
+  `dates=YYYYMMDD` requests return complete results. (Ranges worked when first probed on
   2026-09-05; the API changed in between. Lesson: this endpoint shifts under
   us — re-run `scripts/probe_espn.py` when fetches start failing.) The app
   now fetches the week as nine single-date requests (window ± 1 day) at

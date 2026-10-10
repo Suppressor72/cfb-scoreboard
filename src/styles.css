@@ -810,32 +810,25 @@ thead .score-cell {
   bottom: 0;
   width: 0;
 }
-.drive-arrow {
+/* Football with its nose on the current yard line, body trailing */
+.drive-football {
   position: absolute;
   top: 75%;
-  width: calc(7px * var(--s));
-  height: calc(8px * var(--s));
+  width: calc(12px * var(--s));
+  height: calc(7px * var(--s));
   transform: translateY(-50%);
 }
-.drive-arrow::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  width: 0;
-  height: 0;
-  border-top: calc(4px * var(--s)) solid transparent;
-  border-bottom: calc(4px * var(--s)) solid transparent;
+.drive-football svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
-.drive-arrow.right::before {
+.drive-football.right {
+  right: 0; /* nose (right tip) at the anchor */
+}
+.drive-football.left {
   left: 0;
-  border-left: calc(7px * var(--s)) solid var(--ok);
-}
-.drive-arrow.left {
-  transform: translate(-100%, -50%);
-}
-.drive-arrow.left::before {
-  right: 0;
-  border-right: calc(7px * var(--s)) solid var(--ok);
+  transform: translateY(-50%) scaleX(-1); /* mirrored: nose at the anchor */
 }
 .drive-dd {
   position: absolute;
@@ -850,10 +843,10 @@ thead .score-cell {
   white-space: nowrap;
 }
 .drive-dd.after {
-  right: calc(9px * var(--s));
+  right: calc(14px * var(--s));
 }
 .drive-dd.before {
-  left: calc(9px * var(--s));
+  left: calc(14px * var(--s));
 }
 
 

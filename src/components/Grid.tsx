@@ -533,7 +533,15 @@ function DriveStrip({
               <span key={i} className="drive-fd" style={{ left: pct(abs) }} />
             ))}
             <span className="drive-anchor" style={{ left: pct(drive.ballAbs) }}>
-              <span className={`drive-arrow${homeHasBall ? " right" : " left"}`} />
+              <span className={`drive-football${homeHasBall ? " right" : " left"}`}>
+                <svg viewBox="0 0 12 7" aria-hidden="true">
+                  <path
+                    d="M0.6 3.5C2.5 0.6 9.5 0.6 11.4 3.5 9.5 6.4 2.5 6.4 0.6 3.5Z"
+                    fill="var(--ok)"
+                  />
+                  <line x1="4.6" y1="3.5" x2="7.4" y2="3.5" stroke="#08131f" strokeWidth="0.7" />
+                </svg>
+              </span>
               {drive.downDistance && (
                 <span className={`drive-dd${homeHasBall ? " after" : " before"}`}>
                   {drive.downDistance}

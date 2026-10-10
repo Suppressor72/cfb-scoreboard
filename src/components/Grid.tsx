@@ -512,7 +512,8 @@ function DriveStrip({
         {circles.map((abs, i) => (
           <span key={i} className="drive-fd" style={{ left: pct(abs) }} />
         ))}
-        <span className={`drive-ball${homeHasBall ? " right" : " left"}`} style={{ left: pct(drive.ballAbs) }}>
+        <span className="drive-anchor" style={{ left: pct(drive.ballAbs) }}>
+          <span className={`drive-arrow${homeHasBall ? " right" : " left"}`} />
           {drive.downDistance && (
             <span className={`drive-dd${homeHasBall ? " after" : " before"}`}>{drive.downDistance}</span>
           )}

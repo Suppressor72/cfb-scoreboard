@@ -797,40 +797,55 @@ thead .score-cell {
   background: var(--ok);
   transform: translate(-50%, -50%);
 }
-.drive-ball {
+.drive-anchor {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+}
+.drive-arrow {
   position: absolute;
   top: 50%;
+  width: calc(7px * var(--s));
+  height: calc(8px * var(--s));
+  transform: translateY(-50%);
+}
+.drive-arrow::before {
+  content: "";
+  position: absolute;
+  top: 0;
   width: 0;
   height: 0;
+  border-top: calc(4px * var(--s)) solid transparent;
+  border-bottom: calc(4px * var(--s)) solid transparent;
+}
+.drive-arrow.right::before {
+  left: 0;
+  border-left: calc(7px * var(--s)) solid var(--ok);
+}
+.drive-arrow.left {
+  transform: translate(-100%, -50%);
+}
+.drive-arrow.left::before {
+  right: 0;
+  border-right: calc(7px * var(--s)) solid var(--ok);
+}
+.drive-dd {
+  position: absolute;
+  top: 50%;
   transform: translateY(-50%);
+  line-height: 1;
+  padding: 0 calc(2px * var(--s));
+  color: var(--ok);
   font-size: 0.56rem;
   font-weight: 700;
   white-space: nowrap;
 }
-.drive-ball::before {
-  content: "";
-  display: block;
-  border-top: calc(4px * var(--s)) solid transparent;
-  border-bottom: calc(4px * var(--s)) solid transparent;
-}
-.drive-ball.right::before {
-  border-left: calc(7px * var(--s)) solid var(--ok);
-}
-.drive-ball.left::before {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  border-right: calc(7px * var(--s)) solid var(--ok);
-}
-.drive-dd {
-  padding: 0 calc(2px * var(--s));
-  color: var(--ok);
+.drive-dd.after {
+  left: calc(9px * var(--s));
 }
 .drive-dd.before {
-  position: absolute;
   right: calc(9px * var(--s));
-  line-height: calc(14px * var(--s));
 }
 .drive-dd.after {
   position: absolute;

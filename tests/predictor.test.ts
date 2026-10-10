@@ -79,6 +79,56 @@ describe("fetchGameInsights", () => {
     });
   });
 
+  it("excludes punt distance when the new drive opens with the punt play", async () => {
+    const body = {
+      header: LIVE_SUMMARY.header, // away 2483, home 201
+      drives: {
+        current: {
+          team: { id: "2483" }, // AWAY receiving — drives toward 0 (left)
+          start: { yardLine: 45 }, // punt origin (misleading)
+          plays: [
+            { type: { text: "Punt" }, start: { down: 4, distance: 8, yardLine: 45 }, end: { down: 1, distance: 10, yardLine: 13 } },
+            { type: { text: "Rush" }, start: { down: 1, distance: 10, yardLine: 13 }, end: { down: 2, distance: 6, yardLine: 16, shortDownDistanceText: "2nd & 6" } },
+          ],
+        },
+      },
+    };
+    const transport = async () => ({ status: 200, body });
+    const { drive } = await fetchGameInsights("x", undefined, transport);
+    expect(drive).toEqual({
+      possessionTeamId: "2483",
+      startAbs: 13, // where the punt landed, not the 45 origin
+      ballAbs: 16,
+      downDistance: "2nd & 6",
+      firstDowns: [], // the punt's 4th->1st transition is not a first down
+    });
+  });
+
+  it("synthesizes the flipped possession when the drive ends with a punt", async () => {
+    const body = {
+      header: LIVE_SUMMARY.header, // away 2483, home 201
+      drives: {
+        current: {
+          team: { id: "201" }, // HOME punted; data hasn't swapped drives yet
+          start: { yardLine: 40 },
+          plays: [
+            { type: { text: "Pass Reception" }, start: { down: 1, distance: 10, yardLine: 40 }, end: { down: 2, distance: 7, yardLine: 47 } },
+            { type: { text: "Punt" }, start: { down: 4, distance: 7, yardLine: 47 }, end: { down: 1, distance: 10, yardLine: 87 } },
+          ],
+        },
+      },
+    };
+    const transport = async () => ({ status: 200, body });
+    const { drive } = await fetchGameInsights("x", undefined, transport);
+    expect(drive).toEqual({
+      possessionTeamId: "2483", // the away team receives
+      startAbs: 87, // at the landing spot
+      ballAbs: 87,
+      downDistance: "1st & 10",
+      firstDowns: [],
+    });
+  });
+
   it("parses the live drive chart: ball spot, down/distance, first downs", async () => {
     const body = {
       header: LIVE_SUMMARY.header, // away 2483, home 201

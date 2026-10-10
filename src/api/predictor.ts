@@ -74,7 +74,7 @@ export async function fetchGameInsights(
     });
   }
 
-  const drive = driveOf(res.body);
+  const drive = driveOf(res.body, homeAwayIds(res.body.header));
 
   // Live: newest play's probabilities (ids come from the header)
   if (Array.isArray(res.body.winprobability)) {
@@ -136,7 +136,7 @@ const NOOP_PLAY_TYPES = new Set(["Timeout", "End Period", "End of Half", "End of
  * stale copies); first downs are down transitions (start down ≥ 2 ending
  * at down 1) — CFB play types don't label them.
  */
-function driveOf(body: Record<string, unknown>): DriveChart | null {
+function driveOf(body: Record<string, unknown>, ids: { homeId: string; awayId: string } | null): DriveChart | null {
   const drives = body.drives;
   if (!isRecord(drives) || !isRecord(drives.current)) return null;
   const current = drives.current;
@@ -144,32 +144,83 @@ function driveOf(body: Record<string, unknown>): DriveChart | null {
   if (!possessionTeamId) return null;
 
   const plays = Array.isArray(current.plays) ? current.plays : [];
-
   const typeText = (p: Record<string, unknown>): string =>
     isRecord(p.type) ? String(p.type.text ?? "") : "";
+  // Punts/kickoffs are field-position flips that appear inside drives; the
+  // offense's drive actually starts where the flip landed, and flips never
+  // count as earned first downs.
+  const isFlip = (p: Record<string, unknown>): boolean => /punt|kickoff/i.test(typeText(p));
+  const endYard = (p: Record<string, unknown>): number | undefined => {
+    const end = isRecord(p.end) ? p.end : {};
+    return typeof end.yardLine === "number" && Number.isFinite(end.yardLine)
+      ? end.yardLine
+      : undefined;
+  };
 
+  // Ball spot + down/distance: last non-no-op, non-flip play
   let ballAbs: number | undefined;
   let downDistance = "";
+  let lastReal: Record<string, unknown> | undefined;
   for (let i = plays.length - 1; i >= 0; i--) {
     const p = plays[i];
     if (!isRecord(p) || NOOP_PLAY_TYPES.has(typeText(p))) continue;
+    lastReal = p;
+    if (isFlip(p)) break; // flip plays end the search — the offense hasn't run yet
     const end = isRecord(p.end) ? p.end : {};
-    if (ballAbs === undefined && typeof end.yardLine === "number" && Number.isFinite(end.yardLine)) {
-      ballAbs = end.yardLine;
+    if (ballAbs === undefined && endYard(p) !== undefined) {
+      ballAbs = endYard(p);
       if (typeof end.shortDownDistanceText === "string" && end.shortDownDistanceText) {
         downDistance = end.shortDownDistanceText;
       }
       break;
     }
   }
-  if (ballAbs === undefined) return null;
-  // Drive-level start spot; fall back to the ball spot when absent
-  const startRaw = isRecord(current.start) ? current.start.yardLine : undefined;
-  const startAbs = typeof startRaw === "number" && Number.isFinite(startRaw) ? startRaw : ballAbs;
 
+  // Drive start: skip leading flips — the drive truly begins where the last
+  // leading punt/kickoff landed, not at its origin (excludes punt distance).
+  let flipLanding: number | undefined;
+  for (const p of plays) {
+    if (!isRecord(p) || !isFlip(p)) break;
+    const y = endYard(p);
+    if (y !== undefined) flipLanding = y;
+  }
+  const startRaw = isRecord(current.start) ? current.start.yardLine : undefined;
+  const startAbs =
+    flipLanding ??
+    (typeof startRaw === "number" && Number.isFinite(startRaw) ? startRaw : undefined) ??
+    ballAbs ??
+    0;
+
+  // Possession change the data hasn't caught up to yet: the drive ended with
+  // a punt (or kickoff) — synthesize the receiving team's fresh possession.
+  if (lastReal !== undefined && isFlip(lastReal) && ids) {
+    const landing = endYard(lastReal);
+    if (landing !== undefined && typeText(lastReal).match(/punt|kickoff/i)) {
+      const receiver =
+        possessionTeamId === ids.homeId ? ids.awayId : possessionTeamId === ids.awayId ? ids.homeId : undefined;
+      if (receiver) {
+        const flipEnd = isRecord(lastReal.end) ? lastReal.end : {};
+        const dd =
+          typeof flipEnd.shortDownDistanceText === "string" && flipEnd.shortDownDistanceText
+            ? flipEnd.shortDownDistanceText
+            : "1st & 10";
+        return {
+          possessionTeamId: receiver,
+          startAbs: landing,
+          ballAbs: landing,
+          downDistance: dd,
+          firstDowns: [],
+        };
+      }
+    }
+  }
+
+  if (ballAbs === undefined) return null;
+
+  // Earned first downs: down transitions on scrimmage plays only
   const firstDowns: number[] = [];
   for (const p of plays) {
-    if (!isRecord(p) || NOOP_PLAY_TYPES.has(typeText(p))) continue;
+    if (!isRecord(p) || NOOP_PLAY_TYPES.has(typeText(p)) || isFlip(p)) continue;
     const start = isRecord(p.start) ? p.start : {};
     const end = isRecord(p.end) ? p.end : {};
     if (

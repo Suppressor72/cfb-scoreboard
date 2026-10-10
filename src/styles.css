@@ -856,3 +856,27 @@ thead .score-cell {
   left: calc(9px * var(--s));
 }
 
+
+/* Score banner: justified against the scored-on endzone */
+.drive-score-banner {
+  position: absolute;
+  top: 0;
+  line-height: 1.1;
+  font-size: 0.56rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--ok);
+  white-space: nowrap;
+}
+.drive-score-banner.at-left {
+  left: calc(3px * var(--s));
+}
+.drive-score-banner.at-right {
+  right: calc(3px * var(--s));
+}
+/* Linescore cell for the scoring team's quarter */
+.ls-row > span.ls-scored {
+  background: var(--ok);
+  color: #08131f;
+  border-radius: calc(2px * var(--s));
+}

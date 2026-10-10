@@ -152,26 +152,49 @@ describe("fetchGameInsights", () => {
     });
   });
 
-  it("a scoring play ends the drive — no endzone arrow during the swap lag", async () => {
+  it("a scoring play emits a score banner instead of a drive", async () => {
     // Real shape from TULN@ARMY: TD play ends at yardLine 0 (the goal line
     // scored on), which previously dragged the ball spot into the endzone
     // and stretched the line across the field.
     const body = {
-      header: LIVE_SUMMARY.header,
+      header: LIVE_SUMMARY.header, // away 2483, home 201
       drives: {
         current: {
-          team: { id: "2655" },
+          team: { id: "2483" }, // away scored
           start: { yardLine: 42 },
           plays: [
             { type: { text: "Rush" }, start: { down: 1, distance: 10, yardLine: 42 }, end: { down: 2, distance: 6, yardLine: 46 } },
-            { type: { text: "Passing Touchdown" }, scoringPlay: true, start: { down: 3, distance: 4, yardLine: 39 }, end: { down: -1, yardLine: 0 } },
+            { type: { text: "Passing Touchdown" }, scoringPlay: true, period: { number: 4 }, start: { down: 3, distance: 4, yardLine: 39 }, end: { down: -1, yardLine: 0 } },
           ],
         },
       },
     };
     const transport = async () => ({ status: 200, body });
     const { drive } = await fetchGameInsights("x", undefined, transport);
-    expect(drive).toBeNull(); // bare field until the kickoff drive arrives
+    expect(drive?.score).toEqual({
+      text: "TOUCHDOWN",
+      atAbs: 0, // scored on the away-goal endzone (left)
+      teamId: "2483",
+      period: 4,
+    });
+  });
+
+  it("a safety scores for the OTHER team", async () => {
+    const body = {
+      header: LIVE_SUMMARY.header, // away 2483, home 201
+      drives: {
+        current: {
+          team: { id: "201" }, // home got safetied
+          plays: [
+            { type: { text: "Safety" }, scoringPlay: true, period: { number: 2 }, start: { down: 2, distance: 8, yardLine: 1 }, end: { down: -1, yardLine: 0 } },
+          ],
+        },
+      },
+    };
+    const transport = async () => ({ status: 200, body });
+    const { drive } = await fetchGameInsights("x", undefined, transport);
+    expect(drive?.score?.text).toBe("SAFETY");
+    expect(drive?.score?.teamId).toBe("2483"); // away is awarded the points
   });
 
   it("ignores a bogus goal-line drive start after a possession change", async () => {

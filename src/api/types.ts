@@ -91,6 +91,13 @@ export interface DriveChart {
   ballAbs: number; // 0–100
   downDistance: string; // "2nd & 3"
   firstDowns: number[]; // absolute spots of earned first downs this drive
+  /** Set when the drive just ended in a score: banner + quarter highlight. */
+  score?: {
+    text: string; // "TOUCHDOWN" | "FIELD GOAL" | "SAFETY"
+    atAbs: number; // endzone the score happened at (0 or 100)
+    teamId: string; // the team that scored
+    period: number; // 1-4, 5+ = OT
+  };
 }
 
 export interface Snapshot {

@@ -216,9 +216,46 @@ function driveOf(body: Record<string, unknown>, ids: { homeId: string; awayId: s
     ballAbs ??
     0;
 
-  // Scores end the drive at the goal line; show nothing until the kickoff
-  // drive replaces it (the receiving spot is unknowable until then)
-  if (lastReal !== undefined && isScore(lastReal)) return null;
+  // Scores end the drive at the goal line. The receiving spot is unknowable
+  // until the kickoff, so instead of a drive we emit score info: a banner
+  // against the scored-on endzone plus the scoring team/quarter for the
+  // linescore highlight.
+  if (lastReal !== undefined && isScore(lastReal)) {
+    const text = typeText(lastReal);
+    const kind = /touchdown/i.test(text)
+      ? "TOUCHDOWN"
+      : /field goal/i.test(text)
+        ? "FIELD GOAL"
+        : /safety/i.test(text)
+          ? "SAFETY"
+          : null;
+    if (kind) {
+      const at = endYard(lastReal);
+      const period = isRecord(lastReal.period)
+        ? Number(lastReal.period.number)
+        : undefined;
+      // Safeties score for the OTHER team; TDs/FGs for the possession
+      const scoringTeam =
+        kind === "SAFETY" && ids
+          ? possessionTeamId === ids.homeId
+            ? ids.awayId
+            : possessionTeamId === ids.awayId
+              ? ids.homeId
+              : possessionTeamId
+          : possessionTeamId;
+      if (at !== undefined && period !== undefined && Number.isFinite(period)) {
+        return {
+          possessionTeamId,
+          startAbs: at,
+          ballAbs: at,
+          downDistance: "",
+          firstDowns: [],
+          score: { text: kind, atAbs: at, teamId: scoringTeam, period },
+        };
+      }
+    }
+    return null;
+  }
 
   // Possession change the data hasn't caught up to yet: the drive ended with
   // a punt, kickoff, or turnover — synthesize the receiving team's fresh

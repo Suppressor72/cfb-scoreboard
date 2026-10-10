@@ -460,7 +460,18 @@ function GameBlock({
               className={`ls-row${t.winner || t.id === leaderId ? " won" : ""}`}
             >
               {Array.from({ length: periodCount }, (_, i) => (
-                <span key={i}>{t.linescores?.[i] ?? ""}</span>
+                <span
+                  key={i}
+                  className={
+                    drive?.score &&
+                    drive.score.teamId === t.id &&
+                    drive.score.period === i + 1
+                      ? "ls-scored"
+                      : undefined
+                  }
+                >
+                  {t.linescores?.[i] ?? ""}
+                </span>
               ))}
               <span className="ls-total">{t.score ?? ""}</span>
             </span>
@@ -505,7 +516,11 @@ function DriveStrip({
             {Math.min(abs, 100 - abs)}
           </span>
         ))}
-        {drive && (
+        {drive?.score ? (
+          <span className={`drive-score-banner${drive.score.atAbs <= 50 ? " at-left" : " at-right"}`}>
+            {drive.score.text}
+          </span>
+        ) : drive ? (
           <>
             <span
               className="drive-line"
@@ -526,7 +541,7 @@ function DriveStrip({
               )}
             </span>
           </>
-        )}
+        ) : null}
       </span>
       <TeamLogo team={away} size={logoSize} />
     </span>

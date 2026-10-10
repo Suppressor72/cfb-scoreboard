@@ -791,14 +791,14 @@ thead .score-cell {
 }
 .drive-line {
   position: absolute;
-  top: 50%;
+  top: 75%;
   height: calc(1px * var(--s));
   background: var(--ok);
   transform: translateY(-50%);
 }
 .drive-fd {
   position: absolute;
-  top: 50%;
+  top: 75%;
   width: calc(2px * var(--s));
   height: calc(5px * var(--s)); /* same height the circles had */
   background: var(--ok);
@@ -812,7 +812,7 @@ thead .score-cell {
 }
 .drive-arrow {
   position: absolute;
-  top: 50%;
+  top: 75%;
   width: calc(7px * var(--s));
   height: calc(8px * var(--s));
   transform: translateY(-50%);
@@ -839,7 +839,7 @@ thead .score-cell {
 }
 .drive-dd {
   position: absolute;
-  top: 50%;
+  top: 25%;
   transform: translateY(-50%);
   line-height: 1;
   padding: 0 calc(2px * var(--s));
@@ -849,10 +849,10 @@ thead .score-cell {
   white-space: nowrap;
 }
 .drive-dd.after {
-  left: calc(9px * var(--s));
+  right: calc(9px * var(--s));
 }
 .drive-dd.before {
-  right: calc(9px * var(--s));
+  left: calc(9px * var(--s));
 }
 .drive-dd.after {
   position: absolute;

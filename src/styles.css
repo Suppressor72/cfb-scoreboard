@@ -839,6 +839,7 @@ thead .score-cell {
 }
 .drive-dd {
   position: absolute;
+  z-index: 3; /* topmost in the strip — nothing may overlap the down/distance */
   top: 25%;
   transform: translateY(-50%);
   line-height: 1;

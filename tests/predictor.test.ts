@@ -179,6 +179,30 @@ describe("fetchGameInsights", () => {
     });
   });
 
+  it("a pick-six scores for the DEFENSE (drive stays under the offense)", async () => {
+    // ESPN keeps the interception-return TD inside the offense's drive, so
+    // possessionTeamId is the team that THREW it — the points belong to the
+    // other side.
+    const body = {
+      header: LIVE_SUMMARY.header, // away 2483, home 201
+      drives: {
+        current: {
+          team: { id: "201" }, // HOME threw the pick-six
+          start: { yardLine: 30 },
+          plays: [
+            { type: { text: "Pass Interception Return Touchdown" }, isTurnover: true, scoringPlay: true, period: { number: 4 }, start: { down: 3, distance: 8, yardLine: 34 }, end: { down: -1, yardLine: 100 } },
+          ],
+        },
+      },
+    };
+    const transport = async () => ({ status: 200, body });
+    const { drive } = await fetchGameInsights("x", undefined, transport);
+    expect(drive?.score?.text).toBe("TOUCHDOWN");
+    expect(drive?.score?.teamId).toBe("2483"); // the AWAY defense scored
+    expect(drive?.score?.atAbs).toBe(100);
+    expect(drive?.score?.period).toBe(4);
+  });
+
   it("a safety scores for the OTHER team", async () => {
     const body = {
       header: LIVE_SUMMARY.header, // away 2483, home 201

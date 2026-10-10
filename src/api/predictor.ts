@@ -234,9 +234,12 @@ function driveOf(body: Record<string, unknown>, ids: { homeId: string; awayId: s
       const period = isRecord(lastReal.period)
         ? Number(lastReal.period.number)
         : undefined;
-      // Safeties score for the OTHER team; TDs/FGs for the possession
+      // Safeties AND defensive return TDs (pick-six, fumble-return — the
+      // drive stays under the offense, which is who LOST the ball) score
+      // for the OTHER team; offensive TDs/FGs for the possession
+      const defensiveScore = kind === "SAFETY" || lastReal.isTurnover === true;
       const scoringTeam =
-        kind === "SAFETY" && ids
+        defensiveScore && ids
           ? possessionTeamId === ids.homeId
             ? ids.awayId
             : possessionTeamId === ids.awayId

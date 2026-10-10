@@ -770,14 +770,22 @@ thead .score-cell {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 1px;
-  background: var(--line);
-  transform: translateX(-0.5px);
+  width: calc(18px * var(--s));
+  transform: translateX(-50%);
   font-size: 0.5rem;
   line-height: calc(14px * var(--s));
   color: var(--muted);
-  padding-left: calc(2px * var(--s));
+  text-align: center;
   white-space: nowrap;
+}
+.drive-marker::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--line);
 }
 .drive-marker:nth-of-type(5) {
   background: color-mix(in srgb, var(--muted) 70%, transparent);
@@ -792,7 +800,7 @@ thead .score-cell {
 .drive-fd {
   position: absolute;
   top: 50%;
-  width: calc(1px * var(--s)); /* same width as the drive line */
+  width: calc(2px * var(--s));
   height: calc(5px * var(--s)); /* same height the circles had */
   background: var(--ok);
   transform: translate(-50%, -50%);

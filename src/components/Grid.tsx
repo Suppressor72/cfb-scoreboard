@@ -471,9 +471,10 @@ function GameBlock({
 }
 
 /**
- * Live drive strip: endzone logos (away left / home right), 10-yard markers,
- * first-down circles, and a ball arrowhead with down/distance ahead of it.
- * Absolute yardlines are 0-100 from the HOME goal (right end).
+ * Live drive strip: endzone logos (HOME left — yardlines are absolute
+ * 0-100 from the home goal — AWAY right), 10-yard markers, a circle at the
+ * drive start plus one per first down, a green line from that start circle
+ * to the ball arrowhead, with down/distance ahead of the arrow.
  */
 function DriveStrip({
   drive,
@@ -491,9 +492,10 @@ function DriveStrip({
   // Home drives toward 100 (right); away toward 0 (left)
   const pct = (abs: number): string => `${abs}%`;
   const markers = [10, 20, 30, 40, 50, 60, 70, 80, 90];
+  const circles = [drive.startAbs, ...drive.firstDowns];
   return (
     <span className="block-drive">
-      <TeamLogo team={away} size={logoSize} />
+      <TeamLogo team={home} size={logoSize} />
       <span className="drive-field">
         {markers.map((abs) => (
           <span key={abs} className="drive-marker" style={{ left: pct(abs) }}>
@@ -507,7 +509,7 @@ function DriveStrip({
             width: `${Math.abs(drive.ballAbs - drive.startAbs)}%`,
           }}
         />
-        {drive.firstDowns.map((abs, i) => (
+        {circles.map((abs, i) => (
           <span key={i} className="drive-fd" style={{ left: pct(abs) }} />
         ))}
         <span className={`drive-ball${homeHasBall ? " right" : " left"}`} style={{ left: pct(drive.ballAbs) }}>
@@ -516,7 +518,7 @@ function DriveStrip({
           )}
         </span>
       </span>
-      <TeamLogo team={home} size={logoSize} />
+      <TeamLogo team={away} size={logoSize} />
     </span>
   );
 }

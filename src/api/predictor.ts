@@ -156,6 +156,12 @@ function driveOf(body: Record<string, unknown>, ids: { homeId: string; awayId: s
   // recovered-by-offense fumbles stay out because the flag stays false).
   const endsPossession = (p: Record<string, unknown>): boolean =>
     /punt|kickoff/i.test(typeText(p)) || p.isTurnover === true;
+  // Scoring plays end the drive with end.yardLine at the goal line — during
+  // the lag before the ensuing kickoff drive appears, the new spot is
+  // unknowable, so render no drive at all (bare field) rather than a
+  // bogus endzone arrow.
+  const isScore = (p: Record<string, unknown>): boolean =>
+    p.scoringPlay === true || /touchdown|field goal|safety/i.test(typeText(p));
   const endYard = (p: Record<string, unknown>): number | undefined => {
     const end = isRecord(p.end) ? p.end : {};
     return typeof end.yardLine === "number" && Number.isFinite(end.yardLine)
@@ -171,7 +177,7 @@ function driveOf(body: Record<string, unknown>, ids: { homeId: string; awayId: s
     const p = plays[i];
     if (!isRecord(p) || NOOP_PLAY_TYPES.has(typeText(p))) continue;
     lastReal = p;
-    if (endsPossession(p)) break; // possession ended — the new offense hasn't run yet
+    if (endsPossession(p) || isScore(p)) break; // drive over
     const end = isRecord(p.end) ? p.end : {};
     if (ballAbs === undefined && endYard(p) !== undefined) {
       ballAbs = endYard(p);
@@ -182,20 +188,37 @@ function driveOf(body: Record<string, unknown>, ids: { homeId: string; awayId: s
     }
   }
 
-  // Drive start: skip leading flips — the drive truly begins where the last
-  // leading punt/kickoff landed, not at its origin (excludes punt distance).
+  // Drive start, most-authoritative first: where a leading punt/kickoff/
+  // return landed; else where the first scrimmage play snapped the ball
+  // (drive.start can be unreliable right after possession changes — e.g. a
+  // bogus goal-line value that stretches the line across the field); else
+  // the drive-level start; else the ball spot.
   let flipLanding: number | undefined;
+  let firstSnap: number | undefined;
   for (const p of plays) {
-    if (!isRecord(p) || !isFlip(p)) break;
-    const y = endYard(p);
-    if (y !== undefined) flipLanding = y;
+    if (!isRecord(p) || NOOP_PLAY_TYPES.has(typeText(p))) continue;
+    if (isFlip(p)) {
+      const y = endYard(p);
+      if (y !== undefined) flipLanding = y;
+      continue;
+    }
+    const s = isRecord(p.start) ? p.start : {};
+    if (typeof s.yardLine === "number" && Number.isFinite(s.yardLine)) {
+      firstSnap = s.yardLine;
+    }
+    break; // first scrimmage play decides
   }
   const startRaw = isRecord(current.start) ? current.start.yardLine : undefined;
   const startAbs =
     flipLanding ??
+    firstSnap ??
     (typeof startRaw === "number" && Number.isFinite(startRaw) ? startRaw : undefined) ??
     ballAbs ??
     0;
+
+  // Scores end the drive at the goal line; show nothing until the kickoff
+  // drive replaces it (the receiving spot is unknowable until then)
+  if (lastReal !== undefined && isScore(lastReal)) return null;
 
   // Possession change the data hasn't caught up to yet: the drive ended with
   // a punt, kickoff, or turnover — synthesize the receiving team's fresh

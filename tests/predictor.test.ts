@@ -152,6 +152,69 @@ describe("fetchGameInsights", () => {
     });
   });
 
+  it("a scoring play ends the drive — no endzone arrow during the swap lag", async () => {
+    // Real shape from TULN@ARMY: TD play ends at yardLine 0 (the goal line
+    // scored on), which previously dragged the ball spot into the endzone
+    // and stretched the line across the field.
+    const body = {
+      header: LIVE_SUMMARY.header,
+      drives: {
+        current: {
+          team: { id: "2655" },
+          start: { yardLine: 42 },
+          plays: [
+            { type: { text: "Rush" }, start: { down: 1, distance: 10, yardLine: 42 }, end: { down: 2, distance: 6, yardLine: 46 } },
+            { type: { text: "Passing Touchdown" }, scoringPlay: true, start: { down: 3, distance: 4, yardLine: 39 }, end: { down: -1, yardLine: 0 } },
+          ],
+        },
+      },
+    };
+    const transport = async () => ({ status: 200, body });
+    const { drive } = await fetchGameInsights("x", undefined, transport);
+    expect(drive).toBeNull(); // bare field until the kickoff drive arrives
+  });
+
+  it("ignores a bogus goal-line drive start after a possession change", async () => {
+    // New drive after a turnover: ESPN's drive.start says 0 (goal line) but
+    // the first scrimmage play snapped at 42 — the line must start at 42,
+    // not stretch from the endzone.
+    const body = {
+      header: LIVE_SUMMARY.header, // away 2483, home 201
+      drives: {
+        current: {
+          team: { id: "2483" },
+          start: { yardLine: 0 }, // bogus
+          plays: [
+            { type: { text: "Rush" }, start: { down: 1, distance: 10, yardLine: 42 }, end: { down: 2, distance: 3, yardLine: 45, shortDownDistanceText: "2nd & 3" } },
+          ],
+        },
+      },
+    };
+    const transport = async () => ({ status: 200, body });
+    const { drive } = await fetchGameInsights("x", undefined, transport);
+    expect(drive?.startAbs).toBe(42);
+    expect(drive?.ballAbs).toBe(45);
+  });
+
+  it("a genuine goal-line drive start still draws the long line", async () => {
+    const body = {
+      header: LIVE_SUMMARY.header,
+      drives: {
+        current: {
+          team: { id: "201" },
+          start: { yardLine: 1 },
+          plays: [
+            { type: { text: "Rush" }, start: { down: 1, distance: 10, yardLine: 1 }, end: { down: 2, distance: 6, yardLine: 5, shortDownDistanceText: "2nd & 6" } },
+          ],
+        },
+      },
+    };
+    const transport = async () => ({ status: 200, body });
+    const { drive } = await fetchGameInsights("x", undefined, transport);
+    expect(drive?.startAbs).toBe(1);
+    expect(drive?.ballAbs).toBe(5);
+  });
+
   it("a fumble the offense keeps is not a possession change", async () => {
     const body = {
       header: LIVE_SUMMARY.header,

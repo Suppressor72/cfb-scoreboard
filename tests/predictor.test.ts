@@ -104,6 +104,99 @@ describe("fetchGameInsights", () => {
     });
   });
 
+  it("synthesizes the interception flip with 1st & 10 the other way", async () => {
+    const body = {
+      header: LIVE_SUMMARY.header, // away 2483, home 201
+      drives: {
+        current: {
+          team: { id: "201" }, // HOME threw it; data hasn't swapped drives yet
+          start: { yardLine: 30 },
+          plays: [
+            { type: { text: "Pass Reception" }, start: { down: 1, distance: 10, yardLine: 30 }, end: { down: 2, distance: 4, yardLine: 36 } },
+            { type: { text: "Pass Interception Return" }, isTurnover: true, start: { down: 2, distance: 4, yardLine: 36 }, end: { down: 1, distance: 10, yardLine: 55 } },
+          ],
+        },
+      },
+    };
+    const transport = async () => ({ status: 200, body });
+    const { drive } = await fetchGameInsights("x", undefined, transport);
+    expect(drive).toEqual({
+      possessionTeamId: "2483", // away defense takes over
+      startAbs: 55,
+      ballAbs: 55,
+      downDistance: "1st & 10",
+      firstDowns: [],
+    });
+  });
+
+  it("turnover inside the 10 synthesizes 1st & Goal", async () => {
+    const body = {
+      header: LIVE_SUMMARY.header,
+      drives: {
+        current: {
+          team: { id: "2483" }, // AWAY fumbled it away in scoring range
+          plays: [
+            { type: { text: "Fumble Return Defense" }, isTurnover: true, start: { down: 2, distance: 5, yardLine: 92 }, end: { down: 1, distance: 10, yardLine: 96 } },
+          ],
+        },
+      },
+    };
+    const transport = async () => ({ status: 200, body });
+    const { drive } = await fetchGameInsights("x", undefined, transport);
+    expect(drive).toEqual({
+      possessionTeamId: "201",
+      startAbs: 96,
+      ballAbs: 96,
+      downDistance: "1st & Goal", // 4 yards from the away goal
+      firstDowns: [],
+    });
+  });
+
+  it("a fumble the offense keeps is not a possession change", async () => {
+    const body = {
+      header: LIVE_SUMMARY.header,
+      drives: {
+        current: {
+          team: { id: "201" },
+          start: { yardLine: 30 },
+          plays: [
+            { type: { text: "Fumble Return Offense" }, start: { down: 2, distance: 5, yardLine: 36 }, end: { down: 2, distance: 5, yardLine: 39, shortDownDistanceText: "2nd & 2" } },
+          ],
+        },
+      },
+    };
+    const transport = async () => ({ status: 200, body });
+    const { drive } = await fetchGameInsights("x", undefined, transport);
+    expect(drive?.possessionTeamId).toBe("201"); // still their drive
+    expect(drive?.ballAbs).toBe(39);
+    expect(drive?.downDistance).toBe("2nd & 2");
+  });
+
+  it("a new drive opening with an interception return starts at the return spot", async () => {
+    const body = {
+      header: LIVE_SUMMARY.header,
+      drives: {
+        current: {
+          team: { id: "2483" }, // away intercepted
+          start: { yardLine: 36 }, // INT origin (misleading)
+          plays: [
+            { type: { text: "Pass Interception Return" }, start: { down: 3, distance: 8, yardLine: 36 }, end: { down: 1, distance: 10, yardLine: 18 } },
+            { type: { text: "Rush" }, start: { down: 1, distance: 10, yardLine: 18 }, end: { down: 2, distance: 7, yardLine: 21, shortDownDistanceText: "2nd & 7" } },
+          ],
+        },
+      },
+    };
+    const transport = async () => ({ status: 200, body });
+    const { drive } = await fetchGameInsights("x", undefined, transport);
+    expect(drive).toEqual({
+      possessionTeamId: "2483",
+      startAbs: 18, // return landing, not the 36 origin
+      ballAbs: 21,
+      downDistance: "2nd & 7",
+      firstDowns: [],
+    });
+  });
+
   it("synthesizes the flipped possession when the drive ends with a punt", async () => {
     const body = {
       header: LIVE_SUMMARY.header, // away 2483, home 201

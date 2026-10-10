@@ -146,10 +146,16 @@ function driveOf(body: Record<string, unknown>, ids: { homeId: string; awayId: s
   const plays = Array.isArray(current.plays) ? current.plays : [];
   const typeText = (p: Record<string, unknown>): string =>
     isRecord(p.type) ? String(p.type.text ?? "") : "";
-  // Punts/kickoffs are field-position flips that appear inside drives; the
-  // offense's drive actually starts where the flip landed, and flips never
-  // count as earned first downs.
-  const isFlip = (p: Record<string, unknown>): boolean => /punt|kickoff/i.test(typeText(p));
+  // Punts/kickoffs/turnover returns are field-position flips that appear
+  // inside drives; the offense's drive actually starts where the flip
+  // landed, and flips never count as earned first downs.
+  const isFlip = (p: Record<string, unknown>): boolean =>
+    /punt|kickoff|intercept|fumble/i.test(typeText(p));
+  // A play that hands possession to the other team: punts/kickoffs always,
+  // plus any play ESPN flags isTurnover (interceptions, lost fumbles —
+  // recovered-by-offense fumbles stay out because the flag stays false).
+  const endsPossession = (p: Record<string, unknown>): boolean =>
+    /punt|kickoff/i.test(typeText(p)) || p.isTurnover === true;
   const endYard = (p: Record<string, unknown>): number | undefined => {
     const end = isRecord(p.end) ? p.end : {};
     return typeof end.yardLine === "number" && Number.isFinite(end.yardLine)
@@ -165,7 +171,7 @@ function driveOf(body: Record<string, unknown>, ids: { homeId: string; awayId: s
     const p = plays[i];
     if (!isRecord(p) || NOOP_PLAY_TYPES.has(typeText(p))) continue;
     lastReal = p;
-    if (isFlip(p)) break; // flip plays end the search — the offense hasn't run yet
+    if (endsPossession(p)) break; // possession ended — the new offense hasn't run yet
     const end = isRecord(p.end) ? p.end : {};
     if (ballAbs === undefined && endYard(p) !== undefined) {
       ballAbs = endYard(p);
@@ -192,10 +198,11 @@ function driveOf(body: Record<string, unknown>, ids: { homeId: string; awayId: s
     0;
 
   // Possession change the data hasn't caught up to yet: the drive ended with
-  // a punt (or kickoff) — synthesize the receiving team's fresh possession.
-  if (lastReal !== undefined && isFlip(lastReal) && ids) {
+  // a punt, kickoff, or turnover — synthesize the receiving team's fresh
+  // possession, opposite direction, 1st & 10 (or Goal inside the 10).
+  if (lastReal !== undefined && ids && endsPossession(lastReal)) {
     const landing = endYard(lastReal);
-    if (landing !== undefined && typeText(lastReal).match(/punt|kickoff/i)) {
+    if (landing !== undefined) {
       const receiver =
         possessionTeamId === ids.homeId ? ids.awayId : possessionTeamId === ids.awayId ? ids.homeId : undefined;
       if (receiver) {
@@ -203,7 +210,9 @@ function driveOf(body: Record<string, unknown>, ids: { homeId: string; awayId: s
         const dd =
           typeof flipEnd.shortDownDistanceText === "string" && flipEnd.shortDownDistanceText
             ? flipEnd.shortDownDistanceText
-            : "1st & 10";
+            : Math.min(landing, 100 - landing) <= 10
+              ? "1st & Goal"
+              : "1st & 10";
         return {
           possessionTeamId: receiver,
           startAbs: landing,

@@ -152,6 +152,13 @@ The same summary response also feeds a drive strip on live game blocks:
   (Timeout/End Period/End Game plays carry stale copies).
 - First downs are **derived from down transitions** (play starting at down
   ≥ 2 ending at down 1) — CFB play types never label them.
+- **Possession changes** (punts, kickoffs, interceptions, lost fumbles) are
+  detected via play type plus the play-level `isTurnover` flag (which stays
+  false when the offense recovers its own fumble). When the new drive already
+  contains the flip play, the drive starts at the flip's landing spot; when
+  the data still shows the old drive, the receiving team's fresh possession
+  is synthesized — opposite direction, `1st & 10` (`1st & Goal` inside
+  the 10).
 - Rendered as: away logo left endzone, home logo right, 10-yard markers,
   green first-down circles, and an arrowhead at the ball pointing in the
   drive direction with down/distance ahead of it.

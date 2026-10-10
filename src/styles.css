@@ -854,8 +854,4 @@ thead .score-cell {
 .drive-dd.before {
   left: calc(9px * var(--s));
 }
-.drive-dd.after {
-  position: absolute;
-  left: calc(9px * var(--s));
-  line-height: calc(14px * var(--s));
-}
+

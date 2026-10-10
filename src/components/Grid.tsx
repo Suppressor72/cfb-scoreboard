@@ -500,6 +500,13 @@ function DriveStrip({
             {Math.min(abs, 100 - abs)}
           </span>
         ))}
+        <span
+          className="drive-line"
+          style={{
+            left: `${Math.min(drive.startAbs, drive.ballAbs)}%`,
+            width: `${Math.abs(drive.ballAbs - drive.startAbs)}%`,
+          }}
+        />
         {drive.firstDowns.map((abs, i) => (
           <span key={i} className="drive-fd" style={{ left: pct(abs) }} />
         ))}

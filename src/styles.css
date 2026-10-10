@@ -782,6 +782,13 @@ thead .score-cell {
 .drive-marker:nth-of-type(5) {
   background: color-mix(in srgb, var(--muted) 70%, transparent);
 }
+.drive-line {
+  position: absolute;
+  top: 50%;
+  height: calc(2px * var(--s));
+  background: var(--ok);
+  transform: translateY(-50%);
+}
 .drive-fd {
   position: absolute;
   top: 50%;
@@ -806,17 +813,17 @@ thead .score-cell {
   border-bottom: calc(4px * var(--s)) solid transparent;
 }
 .drive-ball.right::before {
-  border-left: calc(7px * var(--s)) solid var(--accent);
+  border-left: calc(7px * var(--s)) solid var(--ok);
 }
 .drive-ball.left::before {
-  border-right: calc(7px * var(--s)) solid var(--accent);
+  border-right: calc(7px * var(--s)) solid var(--ok);
 }
 .drive-ball.left {
   transform: translateY(-50%) translateX(-100%);
 }
 .drive-dd {
   padding: 0 calc(2px * var(--s));
-  color: var(--accent);
+  color: var(--ok);
 }
 .drive-dd.before {
   position: absolute;

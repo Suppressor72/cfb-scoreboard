@@ -87,6 +87,7 @@ export interface WinProb {
  */
 export interface DriveChart {
   possessionTeamId: string;
+  startAbs: number; // drive's starting spot (0–100)
   ballAbs: number; // 0–100
   downDistance: string; // "2nd & 3"
   firstDowns: number[]; // absolute spots of earned first downs this drive

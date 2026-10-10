@@ -144,6 +144,7 @@ function driveOf(body: Record<string, unknown>): DriveChart | null {
   if (!possessionTeamId) return null;
 
   const plays = Array.isArray(current.plays) ? current.plays : [];
+
   const typeText = (p: Record<string, unknown>): string =>
     isRecord(p.type) ? String(p.type.text ?? "") : "";
 
@@ -162,6 +163,9 @@ function driveOf(body: Record<string, unknown>): DriveChart | null {
     }
   }
   if (ballAbs === undefined) return null;
+  // Drive-level start spot; fall back to the ball spot when absent
+  const startRaw = isRecord(current.start) ? current.start.yardLine : undefined;
+  const startAbs = typeof startRaw === "number" && Number.isFinite(startRaw) ? startRaw : ballAbs;
 
   const firstDowns: number[] = [];
   for (const p of plays) {
@@ -176,5 +180,5 @@ function driveOf(body: Record<string, unknown>): DriveChart | null {
       firstDowns.push(end.yardLine);
     }
   }
-  return { possessionTeamId, ballAbs, downDistance, firstDowns };
+  return { possessionTeamId, startAbs, ballAbs, downDistance, firstDowns };
 }

@@ -85,6 +85,7 @@ describe("fetchGameInsights", () => {
       drives: {
         current: {
           team: { id: "201" }, // HOME has the ball -> arrow points right
+          start: { yardLine: 75 },
           plays: [
             { type: { text: "Kickoff" }, start: { down: 1, distance: 10, yardLine: 35 }, end: { down: 1, distance: 10, yardLine: 75 } },
             { type: { text: "Pass Reception" }, start: { down: 1, distance: 10, yardLine: 75 }, end: { down: 2, distance: 6, yardLine: 69 } },
@@ -100,6 +101,7 @@ describe("fetchGameInsights", () => {
     // Timeout skipped: ball + down/distance come from the last real play
     expect(drive).toEqual({
       possessionTeamId: "201",
+      startAbs: 75, // drive-level start.yardLine
       ballAbs: 59,
       downDistance: "2nd & 3",
       firstDowns: [52], // down 2 -> 1 conversion only

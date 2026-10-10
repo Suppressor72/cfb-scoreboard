@@ -159,9 +159,12 @@ function driveOf(body: Record<string, unknown>, ids: { homeId: string; awayId: s
   // Scoring plays end the drive with end.yardLine at the goal line — during
   // the lag before the ensuing kickoff drive appears, the new spot is
   // unknowable, so render no drive at all (bare field) rather than a
-  // bogus endzone arrow.
+  // bogus endzone arrow. NOTE: "Field Goal Missed"/"Blocked Field Goal"
+  // type texts contain "field goal" — only makes count (scoringPlay flag
+  // or an explicit made pattern).
   const isScore = (p: Record<string, unknown>): boolean =>
-    p.scoringPlay === true || /touchdown|field goal|safety/i.test(typeText(p));
+    (p.scoringPlay === true && !/miss|block/i.test(typeText(p))) ||
+    /touchdown|field goal good|safety/i.test(typeText(p));
   const endYard = (p: Record<string, unknown>): number | undefined => {
     const end = isRecord(p.end) ? p.end : {};
     return typeof end.yardLine === "number" && Number.isFinite(end.yardLine)

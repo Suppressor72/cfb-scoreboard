@@ -203,6 +203,41 @@ describe("fetchGameInsights", () => {
     expect(drive?.score?.period).toBe(4);
   });
 
+  it("a made field goal emits a FIELD GOAL banner", async () => {
+    const body = {
+      header: LIVE_SUMMARY.header, // away 2483, home 201
+      drives: {
+        current: {
+          team: { id: "201" },
+          plays: [
+            { type: { text: "Field Goal Good" }, scoringPlay: true, period: { number: 2 }, start: { down: 4, distance: 5, yardLine: 95 }, end: { down: -1, yardLine: 100 } },
+          ],
+        },
+      },
+    };
+    const transport = async () => ({ status: 200, body });
+    const { drive } = await fetchGameInsights("x", undefined, transport);
+    expect(drive?.score?.text).toBe("FIELD GOAL");
+    expect(drive?.score?.teamId).toBe("201");
+  });
+
+  it("a missed field goal is NOT a score", async () => {
+    const body = {
+      header: LIVE_SUMMARY.header,
+      drives: {
+        current: {
+          team: { id: "201" },
+          plays: [
+            { type: { text: "Field Goal Missed" }, scoringPlay: false, period: { number: 4 }, start: { down: 4, distance: 12, yardLine: 80 }, end: { down: 4, distance: 12, yardLine: 80 } },
+          ],
+        },
+      },
+    };
+    const transport = async () => ({ status: 200, body });
+    const { drive } = await fetchGameInsights("x", undefined, transport);
+    expect(drive?.score).toBeUndefined(); // no banner, no quarter highlight
+  });
+
   it("a safety scores for the OTHER team", async () => {
     const body = {
       header: LIVE_SUMMARY.header, // away 2483, home 201

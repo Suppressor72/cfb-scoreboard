@@ -787,9 +787,6 @@ thead .score-cell {
   width: 1px;
   background: var(--line);
 }
-.drive-marker:nth-of-type(5) {
-  background: color-mix(in srgb, var(--muted) 70%, transparent);
-}
 .drive-line {
   position: absolute;
   top: 50%;

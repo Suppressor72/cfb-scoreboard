@@ -785,22 +785,23 @@ thead .score-cell {
 .drive-line {
   position: absolute;
   top: 50%;
-  height: calc(2px * var(--s));
+  height: calc(1px * var(--s));
   background: var(--ok);
   transform: translateY(-50%);
 }
 .drive-fd {
   position: absolute;
   top: 50%;
-  width: calc(5px * var(--s));
-  height: calc(5px * var(--s));
-  border-radius: 50%;
+  width: calc(1px * var(--s)); /* same width as the drive line */
+  height: calc(5px * var(--s)); /* same height the circles had */
   background: var(--ok);
   transform: translate(-50%, -50%);
 }
 .drive-ball {
   position: absolute;
   top: 50%;
+  width: 0;
+  height: 0;
   transform: translateY(-50%);
   font-size: 0.56rem;
   font-weight: 700;
@@ -808,7 +809,7 @@ thead .score-cell {
 }
 .drive-ball::before {
   content: "";
-  display: inline-block;
+  display: block;
   border-top: calc(4px * var(--s)) solid transparent;
   border-bottom: calc(4px * var(--s)) solid transparent;
 }
@@ -816,10 +817,11 @@ thead .score-cell {
   border-left: calc(7px * var(--s)) solid var(--ok);
 }
 .drive-ball.left::before {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
   border-right: calc(7px * var(--s)) solid var(--ok);
-}
-.drive-ball.left {
-  transform: translateY(-50%) translateX(-100%);
 }
 .drive-dd {
   padding: 0 calc(2px * var(--s));

@@ -10,7 +10,12 @@
  * (see src/state/predictor.ts) — never fetch for a whole day at once.
  */
 import { ScoreboardFetchError, fetchTransport, type Transport } from "./espn";
-import type { WinProb } from "./types";
+import type { DriveChart, WinProb } from "./types";
+
+export interface GameInsights {
+  wp: WinProb | null;
+  drive: DriveChart | null;
+}
 
 const SUMMARY_URL =
   "https://site.api.espn.com/apis/site/v2/sports/football/college-football/summary";
@@ -45,11 +50,11 @@ function homeAwayIds(header: unknown): { homeId: string; awayId: string } | null
   return homeId && awayId ? { homeId, awayId } : null;
 }
 
-export async function fetchWinProb(
+export async function fetchGameInsights(
   gameId: string,
   signal?: AbortSignal,
   transport: Transport = fetchTransport,
-): Promise<WinProb | null> {
+): Promise<GameInsights> {
   const res = await transport(`${SUMMARY_URL}?event=${encodeURIComponent(gameId)}`, {
     signal,
   });
@@ -69,6 +74,8 @@ export async function fetchWinProb(
     });
   }
 
+  const drive = driveOf(res.body);
+
   // Live: newest play's probabilities (ids come from the header)
   if (Array.isArray(res.body.winprobability)) {
     let home: number | undefined;
@@ -85,9 +92,12 @@ export async function fetchWinProb(
     if (home !== undefined && ids) {
       const homePct = home * 100;
       const awayPct = (1 - home - tie) * 100;
-      return homePct >= awayPct
-        ? { teamId: ids.homeId, pct: Math.round(homePct) }
-        : { teamId: ids.awayId, pct: Math.round(awayPct) };
+      return {
+        wp: homePct >= awayPct
+          ? { teamId: ids.homeId, pct: Math.round(homePct) }
+          : { teamId: ids.awayId, pct: Math.round(awayPct) },
+        drive,
+      };
     }
   }
 
@@ -106,11 +116,65 @@ export async function fetchWinProb(
       homeId !== undefined &&
       awayId !== undefined
     ) {
-      return homePct >= awayPct
-        ? { teamId: homeId, pct: Math.round(homePct) }
-        : { teamId: awayId, pct: Math.round(awayPct) };
+      return {
+        wp: homePct >= awayPct
+          ? { teamId: homeId, pct: Math.round(homePct) }
+          : { teamId: awayId, pct: Math.round(awayPct) },
+        drive,
+      };
     }
   }
 
-  return null; // final, or no analytics published
+  return { wp: null, drive }; // final, or no analytics published
+}
+
+const NOOP_PLAY_TYPES = new Set(["Timeout", "End Period", "End of Half", "End of Game"]);
+
+/**
+ * Live drive chart from `drives.current`. Ball spot and down/distance come
+ * from the last play that actually has them (timeouts/end-period carry
+ * stale copies); first downs are down transitions (start down ≥ 2 ending
+ * at down 1) — CFB play types don't label them.
+ */
+function driveOf(body: Record<string, unknown>): DriveChart | null {
+  const drives = body.drives;
+  if (!isRecord(drives) || !isRecord(drives.current)) return null;
+  const current = drives.current;
+  const possessionTeamId = isRecord(current.team) ? teamIdOf(current.team) : undefined;
+  if (!possessionTeamId) return null;
+
+  const plays = Array.isArray(current.plays) ? current.plays : [];
+  const typeText = (p: Record<string, unknown>): string =>
+    isRecord(p.type) ? String(p.type.text ?? "") : "";
+
+  let ballAbs: number | undefined;
+  let downDistance = "";
+  for (let i = plays.length - 1; i >= 0; i--) {
+    const p = plays[i];
+    if (!isRecord(p) || NOOP_PLAY_TYPES.has(typeText(p))) continue;
+    const end = isRecord(p.end) ? p.end : {};
+    if (ballAbs === undefined && typeof end.yardLine === "number" && Number.isFinite(end.yardLine)) {
+      ballAbs = end.yardLine;
+      if (typeof end.shortDownDistanceText === "string" && end.shortDownDistanceText) {
+        downDistance = end.shortDownDistanceText;
+      }
+      break;
+    }
+  }
+  if (ballAbs === undefined) return null;
+
+  const firstDowns: number[] = [];
+  for (const p of plays) {
+    if (!isRecord(p) || NOOP_PLAY_TYPES.has(typeText(p))) continue;
+    const start = isRecord(p.start) ? p.start : {};
+    const end = isRecord(p.end) ? p.end : {};
+    if (
+      typeof start.down === "number" && start.down >= 2 &&
+      end.down === 1 &&
+      typeof end.yardLine === "number" && Number.isFinite(end.yardLine)
+    ) {
+      firstDowns.push(end.yardLine);
+    }
+  }
+  return { possessionTeamId, ballAbs, downDistance, firstDowns };
 }

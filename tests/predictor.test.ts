@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fetchWinProb } from "../src/api/predictor";
+import { fetchGameInsights } from "../src/api/predictor";
 import { getPrediction, resetPredictorsForTests, syncPredictors } from "../src/state/predictor";
 import type { Game, WinProb } from "../src/api/types";
 import { normalizeEvent } from "../src/api/espn";
@@ -40,16 +40,17 @@ const LIVE_SUMMARY = {
   ],
 };
 
-describe("fetchWinProb", () => {
+describe("fetchGameInsights", () => {
   it("parses the pre-game matchup predictor", async () => {
     const transport = async () => ({ status: 200, body: PRE_SUMMARY });
-    const wp = await fetchWinProb("401900100", undefined, transport);
+    const { wp, drive } = await fetchGameInsights("401900100", undefined, transport);
     expect(wp).toEqual({ teamId: "201", pct: 84 });
+    expect(drive).toBeNull(); // pre-game: no current drive
   });
 
   it("parses the live win probability from the newest play", async () => {
     const transport = async () => ({ status: 200, body: LIVE_SUMMARY });
-    const wp = await fetchWinProb("401900101", undefined, transport);
+    const { wp } = await fetchGameInsights("401900101", undefined, transport);
     expect(wp).toEqual({ teamId: "201", pct: 97 }); // home 0.969
   });
 
@@ -59,21 +60,49 @@ describe("fetchWinProb", () => {
       winprobability: [{ homeWinPercentage: 0.18, tiePercentage: 0.02 }],
     };
     const transport = async () => ({ status: 200, body });
-    const wp = await fetchWinProb("x", undefined, transport);
+    const { wp } = await fetchGameInsights("x", undefined, transport);
     expect(wp).toEqual({ teamId: "2483", pct: 80 });
   });
 
-  it("returns null when no analytics exist (final)", async () => {
+  it("returns no analytics when none exist (final)", async () => {
     const transport = async () => ({ status: 200, body: { boxscore: {} } });
-    expect(await fetchWinProb("x", undefined, transport)).toBeNull();
+    const { wp } = await fetchGameInsights("x", undefined, transport);
+    expect(wp).toBeNull();
   });
 
   it("throws typed errors on HTTP failures", async () => {
     const transport = async () => ({ status: 404, body: { code: 404 } });
-    await expect(fetchWinProb("x", undefined, transport)).rejects.toMatchObject({
+    await expect(fetchGameInsights("x", undefined, transport)).rejects.toMatchObject({
       type: "http",
       status: 404,
       retryable: false,
+    });
+  });
+
+  it("parses the live drive chart: ball spot, down/distance, first downs", async () => {
+    const body = {
+      header: LIVE_SUMMARY.header, // away 2483, home 201
+      drives: {
+        current: {
+          team: { id: "201" }, // HOME has the ball -> arrow points right
+          plays: [
+            { type: { text: "Kickoff" }, start: { down: 1, distance: 10, yardLine: 35 }, end: { down: 1, distance: 10, yardLine: 75 } },
+            { type: { text: "Pass Reception" }, start: { down: 1, distance: 10, yardLine: 75 }, end: { down: 2, distance: 6, yardLine: 69 } },
+            { type: { text: "Pass Reception" }, start: { down: 2, distance: 6, yardLine: 69 }, end: { down: 1, distance: 10, yardLine: 52 } },
+            { type: { text: "Timeout" }, start: { down: 1, distance: 10, yardLine: 52 }, end: { down: 1, distance: 10, yardLine: 52 } },
+            { type: { text: "Rush" }, start: { down: 1, distance: 10, yardLine: 52 }, end: { down: 2, distance: 3, yardLine: 59, shortDownDistanceText: "2nd & 3" } },
+          ],
+        },
+      },
+    };
+    const transport = async () => ({ status: 200, body });
+    const { drive } = await fetchGameInsights("x", undefined, transport);
+    // Timeout skipped: ball + down/distance come from the last real play
+    expect(drive).toEqual({
+      possessionTeamId: "201",
+      ballAbs: 59,
+      downDistance: "2nd & 3",
+      firstDowns: [52], // down 2 -> 1 conversion only
     });
   });
 });
@@ -87,9 +116,9 @@ describe("predictor cache", () => {
     const fetched: string[] = [];
     const wpFor = (): WinProb => ({ teamId: "201", pct: 70 });
     const mod = await import("../src/api/predictor");
-    const spy = vi.spyOn(mod, "fetchWinProb").mockImplementation(async (id: string) => {
+    const spy = vi.spyOn(mod, "fetchGameInsights").mockImplementation(async (id: string) => {
       fetched.push(id);
-      return wpFor();
+      return { wp: wpFor(), drive: null };
     });
 
     const many = [preGame, liveGame, finalGame];
@@ -109,9 +138,9 @@ describe("predictor cache", () => {
     );
     const fetched: string[] = [];
     const mod = await import("../src/api/predictor");
-    const spy = vi.spyOn(mod, "fetchWinProb").mockImplementation(async (id: string) => {
+    const spy = vi.spyOn(mod, "fetchGameInsights").mockImplementation(async (id: string) => {
       fetched.push(id);
-      return { teamId: "201", pct: 60 };
+      return { wp: { teamId: "201", pct: 60 }, drive: null };
     });
 
     await syncPredictors(many, { burst: true });
@@ -130,10 +159,10 @@ describe("predictor cache", () => {
     const mod = await import("../src/api/predictor");
     let fail = false;
     const spy = vi
-      .spyOn(mod, "fetchWinProb")
+      .spyOn(mod, "fetchGameInsights")
       .mockImplementation(async () => {
         if (fail) throw new Error("boom");
-        return { teamId: "201", pct: 55 };
+        return { wp: { teamId: "201", pct: 55 }, drive: null };
       });
     await syncPredictors([liveGame]);
     expect(getPrediction(liveGame.id)).toEqual({ teamId: "201", pct: 55 });

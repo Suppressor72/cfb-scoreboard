@@ -140,6 +140,22 @@ hammering. The UI merges predictions by game id at render time
 (`WinProb { teamId, pct }` in the contract); blocks show the favored team's
 abbreviation + percent inline after the time.
 
+### Live drive chart
+
+The same summary response also feeds a drive strip on live game blocks:
+
+- `drives.current` — possession team (`team.id`) and this drive's `plays[]`.
+  Each play's `start`/`end` carry `yardLine` as an **absolute 0-100 from the
+  HOME team's goal line**, plus `down`, `distance`, and
+  `shortDownDistanceText` ("2nd & 3"). `situation` is null even live —
+  down/distance and the ball spot come from the last non-no-op play
+  (Timeout/End Period/End Game plays carry stale copies).
+- First downs are **derived from down transitions** (play starting at down
+  ≥ 2 ending at down 1) — CFB play types never label them.
+- Rendered as: away logo left endzone, home logo right, 10-yard markers,
+  green first-down circles, and an arrowhead at the ball pointing in the
+  drive direction with down/distance ahead of it.
+
 ## Local days and timezones
 
 Provider date buckets ≠ user-local days. Rules:

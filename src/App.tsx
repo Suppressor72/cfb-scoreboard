@@ -19,12 +19,13 @@ import { TZ } from "./lib/tz";
 import { getWeek, refreshWeek, subscribe } from "./state/store";
 import { startScheduler } from "./state/scheduler";
 import {
+  getDrive,
   getPrediction,
   predictorVersion,
   subscribePredictors,
   syncPredictors,
 } from "./state/predictor";
-import type { WinProb } from "./api/types";
+import type { DriveChart, WinProb } from "./api/types";
 
 const FILTERS_KEY = "cfb-scoreboard:filters:v1";
 const CHANNELS_KEY = "cfb-scoreboard:channels:v1";
@@ -150,6 +151,11 @@ export default function App() {
     for (const g of dayGames) map.set(g.id, getPrediction(g.id));
     return map;
   }, [dayGames, predVersion]);
+  const drives = useMemo(() => {
+    const map = new Map<string, DriveChart | null>();
+    for (const g of dayGames) map.set(g.id, getDrive(g.id));
+    return map;
+  }, [dayGames, predVersion]);
   useEffect(() => {
     if (dayGames.length > 0) void syncPredictors(dayGames, { burst: true });
   }, [dayGames]);
@@ -252,6 +258,7 @@ export default function App() {
                 games={onAxis}
                 tz={TZ}
                 predictions={predictions}
+                drives={drives}
                 channelOrder={channelOrder}
                 onReorderChannels={handleReorderChannels}
                 focusChannel={focusChannel}

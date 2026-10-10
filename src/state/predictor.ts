@@ -4,8 +4,8 @@
  * pre-game, 90 s live; final games stop refreshing. Failures keep the last
  * value and count as an attempt, so a dead endpoint is not hammered.
  */
-import type { Game, WinProb } from "../api/types";
-import { fetchWinProb } from "../api/predictor";
+import type { DriveChart, Game, WinProb } from "../api/types";
+import { fetchGameInsights } from "../api/predictor";
 
 export const PRE_TTL_MS = 15 * 60_000;
 export const LIVE_TTL_MS = 90_000;
@@ -15,6 +15,7 @@ const MAX_ENTRIES = 300;
 
 interface Entry {
   wp: WinProb | null;
+  drive: DriveChart | null;
   fetchedAt: number;
 }
 
@@ -35,6 +36,10 @@ export function predictorVersion(): number {
 
 export function getPrediction(gameId: string): WinProb | null {
   return cache.get(gameId)?.wp ?? null;
+}
+
+export function getDrive(gameId: string): DriveChart | null {
+  return cache.get(gameId)?.drive ?? null;
 }
 
 function emit(): void {
@@ -103,12 +108,18 @@ async function syncPredictorsInner(
     await Promise.all(
       batch.slice(i, i + concurrency).map(async (game) => {
         try {
-          const wp = await fetchWinProb(game.id);
-          cache.set(game.id, { wp, fetchedAt: Date.now() });
+          const insights = await fetchGameInsights(game.id);
+          cache.set(game.id, {
+            wp: insights.wp,
+            drive: insights.drive,
+            fetchedAt: Date.now(),
+          });
         } catch {
           // keep the last value, record the attempt (waits out the TTL)
+          const prev = cache.get(game.id);
           cache.set(game.id, {
-            wp: cache.get(game.id)?.wp ?? null,
+            wp: prev?.wp ?? null,
+            drive: prev?.drive ?? null,
             fetchedAt: Date.now(),
           });
         }

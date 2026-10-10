@@ -10,7 +10,7 @@ import TeamLogo from "./TeamLogo";
 
 const RAIL_PX = 92;
 const MIN_PX_PER_MS = 0.000012; // ≈43px/hour floor — beyond this, scroll
-const LANE_PX = 64;
+const LANE_PX = 80;
 const COLLAPSE_LANES = 2;
 
 interface Props {
@@ -27,6 +27,8 @@ interface Props {
   /** User's persisted channel sequence (empty = default order). */
   channelOrder: string[];
   onReorderChannels: (order: string[]) => void;
+  /** Live drive chart per game id. */
+  drives: Map<string, import("../api/types").DriveChart | null>;
 }
 
 /**
@@ -162,6 +164,7 @@ export default function Grid(props: Props) {
               onSelectGame={props.onSelectGame}
               selectedGameId={props.selectedGameId}
               predictions={props.predictions}
+              drives={props.drives}
               dragging={dragging}
               dropTarget={dropTarget}
               onDragChannel={setDragging}
@@ -210,6 +213,7 @@ function ChannelRow({
   onSelectGame,
   selectedGameId,
   predictions,
+  drives,
   dragging,
   dropTarget,
   onDragChannel,
@@ -231,6 +235,7 @@ function ChannelRow({
   onSelectGame: (id: string, origin: { x: number; y: number }) => void;
   selectedGameId: string | null;
   predictions: Map<string, import("../api/types").WinProb | null>;
+  drives: Map<string, import("../api/types").DriveChart | null>;
   dragging: string | null;
   dropTarget: string | null;
   onDragChannel: (channel: string | null) => void;
@@ -309,6 +314,7 @@ function ChannelRow({
                 onSelectGame={onSelectGame}
                 selected={selectedGameId === block.game.id}
                 winProb={predictions.get(block.game.id) ?? null}
+                drive={drives.get(block.game.id) ?? null}
               />
             ))}
           </div>
@@ -346,6 +352,7 @@ function GameBlock({
   onSelectGame,
   selected,
   winProb,
+  drive,
 }: {
   block: Block;
   pos: (ms: number) => number;
@@ -356,6 +363,7 @@ function GameBlock({
   onSelectGame: (id: string, origin: { x: number; y: number }) => void;
   selected: boolean;
   winProb: import("../api/types").WinProb | null;
+  drive: import("../api/types").DriveChart | null;
 }) {
   const g = block.game;
   const width = Math.max((block.endMs - block.startMs) * pxPerMs, minBlockPx);
@@ -431,6 +439,12 @@ function GameBlock({
       <span className={`block-team${g.phase === "post" && g.home.winner ? " won" : ""}`}>
         <TeamLine team={g.home} logoSize={logoSize} />
       </span>
+      <DriveStrip
+        drive={live ? drive : null}
+        home={g.home}
+        away={g.away}
+        logoSize={Math.round(logoSize * 0.75)}
+      />
       {showLinescore && (
         <span className="block-linescore">
           <span className="ls-row ls-head">
@@ -453,6 +467,50 @@ function GameBlock({
         </span>
       )}
     </button>
+  );
+}
+
+/**
+ * Live drive strip: endzone logos (away left / home right), 10-yard markers,
+ * first-down circles, and a ball arrowhead with down/distance ahead of it.
+ * Absolute yardlines are 0-100 from the HOME goal (right end).
+ */
+function DriveStrip({
+  drive,
+  home,
+  away,
+  logoSize,
+}: {
+  drive: import("../api/types").DriveChart | null;
+  home: Game["home"];
+  away: Game["away"];
+  logoSize: number;
+}) {
+  if (!drive) return <span className="block-drive" aria-hidden="true" />;
+  const homeHasBall = drive.possessionTeamId === home.id;
+  // Home drives toward 100 (right); away toward 0 (left)
+  const pct = (abs: number): string => `${abs}%`;
+  const markers = [10, 20, 30, 40, 50, 60, 70, 80, 90];
+  return (
+    <span className="block-drive">
+      <TeamLogo team={away} size={logoSize} />
+      <span className="drive-field">
+        {markers.map((abs) => (
+          <span key={abs} className="drive-marker" style={{ left: pct(abs) }}>
+            {Math.min(abs, 100 - abs)}
+          </span>
+        ))}
+        {drive.firstDowns.map((abs, i) => (
+          <span key={i} className="drive-fd" style={{ left: pct(abs) }} />
+        ))}
+        <span className={`drive-ball${homeHasBall ? " right" : " left"}`} style={{ left: pct(drive.ballAbs) }}>
+          {drive.downDistance && (
+            <span className={`drive-dd${homeHasBall ? " after" : " before"}`}>{drive.downDistance}</span>
+          )}
+        </span>
+      </span>
+      <TeamLogo team={home} size={logoSize} />
+    </span>
   );
 }
 

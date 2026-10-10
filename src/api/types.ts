@@ -80,6 +80,18 @@ export interface WinProb {
   pct: number;
 }
 
+/**
+ * Live drive chart from the summary's drives.current. Yardlines are
+ * absolute 0–100 measured from the HOME team's goal line (ESPN's convention),
+ * so the away endzone is at 0 and the home endzone at 100.
+ */
+export interface DriveChart {
+  possessionTeamId: string;
+  ballAbs: number; // 0–100
+  downDistance: string; // "2nd & 3"
+  firstDowns: number[]; // absolute spots of earned first downs this drive
+}
+
 export interface Snapshot {
   games: Game[];
   fetchedAt: string; // local clock, ISO

@@ -840,8 +840,8 @@ thead .score-cell {
 .drive-dd {
   position: absolute;
   z-index: 3; /* topmost in the strip — nothing may overlap the down/distance */
-  top: 25%;
-  transform: translateY(-50%);
+  top: 0; /* text top flush with the field top — 25% center clipped it */
+  line-height: 1.1;
   line-height: 1;
   padding: 0 calc(2px * var(--s));
   color: var(--ok);

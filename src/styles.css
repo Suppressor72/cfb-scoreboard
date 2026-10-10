@@ -768,6 +768,7 @@ thead .score-cell {
 }
 .drive-marker {
   position: absolute;
+  isolation: isolate; /* contain the negative-z tick so digits paint in front */
   top: 0;
   bottom: 0;
   width: calc(18px * var(--s));
@@ -786,6 +787,7 @@ thead .score-cell {
   bottom: 0;
   width: 1px;
   background: var(--line);
+  z-index: -1; /* behind the yardage digits */
 }
 .drive-line {
   position: absolute;

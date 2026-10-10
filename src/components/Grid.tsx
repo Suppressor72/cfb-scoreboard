@@ -440,7 +440,8 @@ function GameBlock({
         <TeamLine team={g.home} logoSize={logoSize} />
       </span>
       <DriveStrip
-        drive={live ? drive : null}
+        drive={live && g.statusKind !== "halftime" ? drive : null}
+        showField={live}
         home={g.home}
         away={g.away}
         logoSize={Math.round(logoSize * 0.75)}
@@ -478,21 +479,23 @@ function GameBlock({
  */
 function DriveStrip({
   drive,
+  showField,
   home,
   away,
   logoSize,
 }: {
   drive: import("../api/types").DriveChart | null;
+  /** Keep the field skeleton (logos, yard markers) without a live drive. */
+  showField: boolean;
   home: Game["home"];
   away: Game["away"];
   logoSize: number;
 }) {
-  if (!drive) return <span className="block-drive" aria-hidden="true" />;
-  const homeHasBall = drive.possessionTeamId === home.id;
+  if (!showField && !drive) return <span className="block-drive" aria-hidden="true" />;
+  const homeHasBall = drive ? drive.possessionTeamId === home.id : false;
   // Home drives toward 100 (right); away toward 0 (left)
   const pct = (abs: number): string => `${abs}%`;
   const markers = [10, 20, 30, 40, 50, 60, 70, 80, 90];
-  const circles = [drive.startAbs, ...drive.firstDowns];
   return (
     <span className="block-drive">
       <TeamLogo team={home} size={logoSize} />
@@ -502,22 +505,28 @@ function DriveStrip({
             {Math.min(abs, 100 - abs)}
           </span>
         ))}
-        <span
-          className="drive-line"
-          style={{
-            left: `${Math.min(drive.startAbs, drive.ballAbs)}%`,
-            width: `${Math.abs(drive.ballAbs - drive.startAbs)}%`,
-          }}
-        />
-        {circles.map((abs, i) => (
-          <span key={i} className="drive-fd" style={{ left: pct(abs) }} />
-        ))}
-        <span className="drive-anchor" style={{ left: pct(drive.ballAbs) }}>
-          <span className={`drive-arrow${homeHasBall ? " right" : " left"}`} />
-          {drive.downDistance && (
-            <span className={`drive-dd${homeHasBall ? " after" : " before"}`}>{drive.downDistance}</span>
-          )}
-        </span>
+        {drive && (
+          <>
+            <span
+              className="drive-line"
+              style={{
+                left: `${Math.min(drive.startAbs, drive.ballAbs)}%`,
+                width: `${Math.abs(drive.ballAbs - drive.startAbs)}%`,
+              }}
+            />
+            {[drive.startAbs, ...drive.firstDowns].map((abs, i) => (
+              <span key={i} className="drive-fd" style={{ left: pct(abs) }} />
+            ))}
+            <span className="drive-anchor" style={{ left: pct(drive.ballAbs) }}>
+              <span className={`drive-arrow${homeHasBall ? " right" : " left"}`} />
+              {drive.downDistance && (
+                <span className={`drive-dd${homeHasBall ? " after" : " before"}`}>
+                  {drive.downDistance}
+                </span>
+              )}
+            </span>
+          </>
+        )}
       </span>
       <TeamLogo team={away} size={logoSize} />
     </span>
